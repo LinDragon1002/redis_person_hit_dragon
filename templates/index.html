@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>龍王 vs 勇者 - 戰鬥指揮中心</title>
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>⚔️</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🐲</text></svg>">
+    
+    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 新增：玩法說明樣式 -->
+    <style>
+        /* 玩法說明專用樣式 */
+        .help-modal-content {
+            max-width: 700px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        
+        .help-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(0, 255, 255, 0.03);
+            border-radius: 12px;
+            border-left: 3px solid var(--neon-cyan);
+        }
+        
+        .help-section h4 {
+            color: var(--neon-cyan);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .help-section h4 i {
+            font-size: 1.2em;
+        }
+        
+        .skill-list {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .skill-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .skill-item:hover {
+            background: rgba(0, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .skill-key {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #000;
+        }
+        
+        .skill-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .skill-name {
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .skill-desc {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+        
+        .skill-stats {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+            font-size: 0.8em;
+        }
+        
+        .skill-damage {
+            color: #ff6b6b;
+        }
+        
+        .skill-heal {
+            color: #51cf66;
+        }
+        
+        .skill-cd {
+            color: #ffd43b;
+        }
+        
+        .tip-box {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 140, 0, 0.1));
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .tip-box h5 {
+            color: #ffd700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tip-box ul {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--text-secondary);
+        }
+        
+        .tip-box li {
+            margin-bottom: 5px;
+        }
+        
+        .mode-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .mode-card {
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .mode-card.manual {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(0, 217, 255, 0.05));
+            border: 1px solid rgba(0, 217, 255, 0.3);
+        }
+        
+        .mode-card.auto {
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(255, 0, 255, 0.05));
+            border: 1px solid rgba(255, 0, 255, 0.3);
+        }
+        
+        .mode-card h5 {
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        
+        .mode-card.manual h5 { color: var(--neon-cyan); }
+        .mode-card.auto h5 { color: var(--neon-purple); }
+        
+        .mode-card p {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        
+        /* 幫助按鈕樣式 */
+        .help-btn {
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .help-btn:hover {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+        
+        /* 難度選擇樣式 */
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        .difficulty-btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            background: transparent;
+        }
+        
+        .difficulty-btn.easy {
+            border-color: #51cf66;
+            color: #51cf66;
+        }
+        
+        .difficulty-btn.normal {
+            border-color: #ffd43b;
+            color: #ffd43b;
+        }
+        
+        .difficulty-btn.hard {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        
+        .difficulty-btn.active {
+            color: #000;
+        }
+        
+        .difficulty-btn.easy.active { background: #51cf66; }
+        .difficulty-btn.normal.active { background: #ffd43b; }
+        .difficulty-btn.hard.active { background: #ff6b6b; }
+    </style>
+</head>
+<body>
+    
+    <!-- 粒子背景畫布 -->
+    <canvas id="particleCanvas"></canvas>
+    
+    <!-- 頂部科技導航欄 -->
+    <nav class="tech-navbar">
+        <div class="container navbar-content">
+            <div class="navbar-left">
+                <div class="logo-container">
+                    <i class="fas fa-dragon"></i>
+                    <span class="brand-text">BATTLE ARENA</span>
+                    <div class="logo-glow"></div>
+                </div>
+                <div class="system-status">
+                    <span class="status-dot online"></span>
+                    <span class="status-text">系統運行中</span>
+                </div>
+            </div>
+            <ul class="navbar-links">
+                <li><a href="#" class="active"><i class="fas fa-chart-line"></i> 戰情中心</a></li>
+                <li><a href="/leaderboard"><i class="fas fa-trophy"></i> 排行榜</a></li>
+                <li><a href="#achievements-section"><i class="fas fa-medal"></i> 成就</a></li>
+                <li><a href="/history"><i class="fas fa-history"></i> 全部紀錄</a></li>
+            </ul>
+            <div class="navbar-right" style="display: flex; align-items: center; gap: 15px;">
+                <!-- 新增：玩法說明按鈕 -->
+                <button class="help-btn" id="helpBtn">
+                    <i class="fas fa-question-circle"></i>
+                    <span>玩法說明</span>
+                </button>
+                <div class="sound-toggle">
+                    <i class="fas fa-volume-up" id="soundIcon"></i>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 即時通知區域 -->
+    <div id="realtimeNotifications" class="realtime-notifications"></div>
+
+    <div class="container main-content">
+        <!-- 主標題區域 -->
+        <header class="tech-header">
+            <div class="header-bg-effect"></div>
+            <div class="header-content">
+                <div class="title-container">
+                    <h1 class="glitch-text" data-text="戰鬥指揮中心">戰鬥指揮中心</h1>
+                    <div class="subtitle-tech">
+                        <span class="typing-text">實時監控系統 v2.0</span>
+                        <span class="cursor">_</span>
+                    </div>
+                </div>
+                
+                <!-- 難度選擇 (新增) -->
+                <div class="difficulty-selector">
+                    <button class="difficulty-btn easy" data-difficulty="easy">簡單</button>
+                    <button class="difficulty-btn normal active" data-difficulty="normal">普通</button>
+                    <button class="difficulty-btn hard" data-difficulty="hard">困難</button>
+                </div>
+                
+                <!-- 控制面板 -->
+                <div class="control-panel">
+                    <button id="runGameBtn" class="tech-btn primary">
+                        <span class="btn-bg"></span>
+                        <i class="fas fa-bolt"></i>
+                        <span>啟動決鬥</span>
+                    </button>
+                    <button id="autoBattleBtn" class="tech-btn auto">
+                        <span class="btn-bg"></span>
+                        <i class="fas fa-robot"></i>
+                        <span>自動模式</span>
+                    </button>
+                </div>
+                
+                <div id="gameStatus" class="game-status-tech"></div>
+            </div>
+        </header>
+
+        <!-- 核心數據儀表板 -->
+        <div class="dashboard-grid">
+            <!-- 左側：戰鬥統計 -->
+            <div class="dash-card stats-panel">
+                <div class="card-header">
+                    <h3><i class="fas fa-database"></i> 核心數據</h3>
+                    <div class="card-corner"></div>
+                </div>
+                <div class="stats-display">
+                    <div class="stat-item pulse">
+                        <div class="stat-icon" style="--icon-color: #00ffff;">
+                            <i class="fas fa-gamepad"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">總戰鬥場次</div>
+                            <div class="stat-value counter" id="totalGames">0</div>
+                        </div>
+                        <div class="stat-bar"></div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div class="stat-icon" style="--icon-color: #ff00ff;">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">平均回合數</div>
+                            <div class="stat-value counter" id="avgRounds">0</div>
+                        </div>
+                        <div class="stat-bar"></div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div class="stat-icon" style="--icon-color: #ffd700;">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">平手場次</div>
+                            <div class="stat-value counter" id="draws">0</div>
+                        </div>
+                        <div class="stat-bar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中間：勝率圓餅圖 -->
+            <div class="dash-card chart-panel">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-pie"></i> 勝率分析</h3>
+                    <div class="card-corner"></div>
+                </div>
+                <div class="chart-container-tech">
+                    <canvas id="winRateChart"></canvas>
+                    <div class="chart-center-info">
+                        <div class="center-label">總場次</div>
+                        <div class="center-value" id="centerTotal">0</div>
+                    </div>
+                </div>
+                <div class="legend-tech">
+                    <div class="legend-item dragon">
+                        <div class="legend-dot"></div>
+                        <span>龍王</span>
+                        <strong id="dragonWinRate">0%</strong>
+                    </div>
+                    <div class="legend-item person">
+                        <div class="legend-dot"></div>
+                        <span>勇者</span>
+                        <strong id="personWinRate">0%</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 戰士詳細資訊 -->
+        <div class="warriors-section">
+            <div class="warrior-card dragon-side">
+                <div class="card-header">
+                    <h3><i class="fas fa-dragon"></i> 龍王數據</h3>
+                    <div class="card-corner"></div>
+                </div>
+                <div class="warrior-content">
+                    <div class="warrior-avatar">
+                        <div class="avatar-frame dragon-frame">
+                            <img src="../static/img/dragon_girl.png" alt="龍王" class="avatar-img">
+                            <div class="avatar-glow"></div>
+                        </div>
+                        <div class="warrior-title">焰之支配者</div>
+                        <div class="win-count">
+                            <i class="fas fa-crown"></i>
+                            <span id="dragonWins">0</span> 勝
+                        </div>
+                    </div>
+                    
+                    <div class="warrior-stats">
+                        <div class="stat-row-tech">
+                            <div class="stat-header">
+                                <div class="stat-name"><i class="fas fa-fire"></i> 總傷害</div>
+                                <div class="stat-avg-badge" title="平均每場傷害">AVG: <span id="dragonAvgDamage">0</span></div>
+                            </div>
+                            <div class="stat-progress">
+                                <div class="progress-bar dragon-progress">
+                                    <div class="progress-fill" id="dragonDamageBar"></div>
+                                </div>
+                                <span class="stat-num" id="dragonTotalDamage">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-row-tech">
+                            <div class="stat-header">
+                                <div class="stat-name"><i class="fas fa-heart"></i> 治療量</div>
+                                <div class="stat-avg-badge" title="平均每場治療">AVG: <span id="dragonAvgHealing">0</span></div>
+                            </div>
+                            <div class="stat-progress">
+                                <div class="progress-bar dragon-progress">
+                                    <div class="progress-fill" id="dragonHealBar"></div>
+                                </div>
+                                <span class="stat-num" id="dragonTotalHealing">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-row-tech">
+                            <div class="stat-name">
+                                <i class="fas fa-star"></i> 暴擊次數
+                            </div>
+                            <div class="stat-progress">
+                                <div class="progress-bar dragon-progress">
+                                    <div class="progress-fill" id="dragonCritBar"></div>
+                                </div>
+                                <span class="stat-num" id="dragonTotalCrits">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warrior-card person-side">
+                <div class="card-header">
+                    <h3><i class="fas fa-hat-wizard"></i> 勇者數據</h3>
+                    <div class="card-corner"></div>
+                </div>
+                <div class="warrior-content">
+                    <div class="warrior-avatar">
+                        <div class="avatar-frame person-frame">
+                            <img src="../static/img/person_boy.png" alt="勇者" class="avatar-img">
+                            <div class="avatar-glow"></div>
+                        </div>
+                        <div class="warrior-title">光之守護者</div>
+                        <div class="win-count">
+                            <i class="fas fa-crown"></i>
+                            <span id="personWins">0</span> 勝
+                        </div>
+                    </div>
+                    
+                    <div class="warrior-stats">
+                        <div class="stat-row-tech">
+                            <div class="stat-header">
+                                <div class="stat-name"><i class="fas fa-fire"></i> 總傷害</div>
+                                <div class="stat-avg-badge" title="平均每場傷害">AVG: <span id="personAvgDamage">0</span></div>
+                            </div>
+                            <div class="stat-progress">
+                                <div class="progress-bar person-progress">
+                                    <div class="progress-fill" id="personDamageBar"></div>
+                                </div>
+                                <span class="stat-num" id="personTotalDamage">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-row-tech">
+                            <div class="stat-header">
+                                <div class="stat-name"><i class="fas fa-heart"></i> 治療量</div>
+                                <div class="stat-avg-badge" title="平均每場治療">AVG: <span id="personAvgHealing">0</span></div>
+                            </div>
+                            <div class="stat-progress">
+                                <div class="progress-bar person-progress">
+                                    <div class="progress-fill" id="personHealBar"></div>
+                                </div>
+                                <span class="stat-num" id="personTotalHealing">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-row-tech">
+                            <div class="stat-name">
+                                <i class="fas fa-star"></i> 暴擊次數
+                            </div>
+                            <div class="stat-progress">
+                                <div class="progress-bar person-progress">
+                                    <div class="progress-fill" id="personCritBar"></div>
+                                </div>
+                                <span class="stat-num" id="personTotalCrits">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 成就系統 -->
+        <div class="achievements-section" id="achievements-section">
+            <div class="card-header">
+                <h3><i class="fas fa-medal"></i> 解鎖成就</h3>
+                <div class="card-corner"></div>
+            </div>
+            <div class="achievements-grid">
+                <div class="achievement-badge locked" id="achievement1">
+                    <div class="badge-icon"><i class="fas fa-fire"></i></div>
+                    <div class="badge-name">首勝</div>
+                    <div class="badge-desc">完成第一場戰鬥</div>
+                </div>
+                <div class="achievement-badge locked" id="achievement2">
+                    <div class="badge-icon"><i class="fas fa-bolt"></i></div>
+                    <div class="badge-name">連勝王</div>
+                    <div class="badge-desc">連續獲勝 5 場</div>
+                </div>
+                <div class="achievement-badge locked" id="achievement3">
+                    <div class="badge-icon"><i class="fas fa-trophy"></i></div>
+                    <div class="badge-name">百戰老將</div>
+                    <div class="badge-desc">完成 100 場戰鬥</div>
+                </div>
+                <div class="achievement-badge locked" id="achievement4">
+                    <div class="badge-icon"><i class="fas fa-star"></i></div>
+                    <div class="badge-name">暴擊大師</div>
+                    <div class="badge-desc">累計 50 次暴擊</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 戰鬥歷史記錄 -->
+        <div class="battle-history">
+            <div class="card-header">
+                <h3><i class="fas fa-history"></i> 戰鬥履歷</h3>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">全部</button>
+                    <button class="filter-btn" data-filter="dragon">龍王勝</button>
+                    <button class="filter-btn" data-filter="person">勇者勝</button>
+                    <button class="filter-btn" data-filter="draw">平手</button>
+                </div>
+                <div class="card-corner"></div>
+            </div>
+            <div id="gamesList" class="battle-list">
+                <div class="loading-tech">
+                    <div class="loading-spinner"></div>
+                    <span>載入戰鬥數據...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 玩家名稱輸入模態框 -->
+    <div id="playerNameModal" class="modal-tech" style="display: flex;">
+        <div class="modal-content-tech" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-user"></i> 歡迎來到戰鬥競技場</h3>
+            </div>
+            <div class="player-name-input-container">
+                <p style="color: var(--text-secondary); margin-bottom: 20px; text-align: center;">
+                    請輸入你的玩家名稱，你的戰績將會被記錄
+                </p>
+                <div class="input-group-tech">
+                    <input type="text" id="playerNameInput" placeholder="輸入你的名稱" maxlength="20" autocomplete="off">
+                    <button id="confirmPlayerName" class="tech-btn primary">
+                        <span class="btn-bg"></span>
+                        <i class="fas fa-check"></i>
+                        <span>開始戰鬥</span>
+                    </button>
+                </div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <label style="color: var(--text-secondary); font-size: 0.9em; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="rememberName" checked style="width: 16px; height: 16px; cursor: pointer;">
+                        <span>記住我的名稱（下次自動登入）</span>
+                    </label>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.85em; margin-top: 15px; text-align: center;">
+                    提示：角色名稱（龍王/勇者）不會改變，這只是記錄是誰在操作
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 戰鬥回放模態框 -->
+    <div id="replayModal" class="modal-tech">
+        <div class="modal-content-tech">
+            <div class="modal-header">
+                <h3><i class="fas fa-play-circle"></i> 戰鬥回放</h3>
+                <button class="close-btn-tech">&times;</button>
+            </div>
+            <div id="replayLog" class="replay-content"></div>
+        </div>
+    </div>
+
+    <!-- 新增：玩法說明模態框 -->
+    <div id="helpModal" class="modal-tech">
+        <div class="modal-content-tech help-modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-book-open"></i> 遊戲玩法說明</h3>
+                <button class="close-btn-tech" id="closeHelpModal">&times;</button>
+            </div>
+            
+            <div class="help-content" style="padding: 20px;">
+                <!-- 遊戲模式說明 -->
+                <div class="help-section">
+                    <h4><i class="fas fa-gamepad"></i> 遊戲模式</h4>
+                    <p style="color: var(--text-secondary); margin-bottom: 15px;">
+                        這是一款回合制戰鬥遊戲，你將扮演<strong style="color: var(--person-color);">勇者</strong>挑戰強大的<strong style="color: var(--dragon-color);">龍王</strong>！
+                    </p>
+                    <div class="mode-comparison">
+                        <div class="mode-card manual">
+                            <h5><i class="fas fa-hand-pointer"></i> 手動模式</h5>
+                            <p>親自操控勇者，選擇技能時機，每回合 5 秒思考時間</p>
+                        </div>
+                        <div class="mode-card auto">
+                            <h5><i class="fas fa-robot"></i> 自動模式</h5>
+                            <p>AI 自動操控戰鬥，適合快速累積戰績或掛機</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 技能說明 -->
+                <div class="help-section">
+                    <h4><i class="fas fa-magic"></i> 勇者技能</h4>
+                    <div class="skill-list">
+                        <div class="skill-item">
+                            <div class="skill-key">1</div>
+                            <div class="skill-info">
+                                <div class="skill-name">⚔️ 光之斬擊（普攻）</div>
+                                <div class="skill-desc">基礎攻擊技能，穩定輸出，有機率觸發暴擊</div>
+                            </div>
+                            <div class="skill-stats">
+                                <span class="skill-damage">傷害: 2 (暴擊: 4)</span>
+                                <span class="skill-cd">冷卻: 無</span>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-key">2</div>
+                            <div class="skill-info">
+                                <div class="skill-name">💚 治癒</div>
+                                <div class="skill-desc">恢復自身生命值，危急時刻的保命技能</div>
+                            </div>
+                            <div class="skill-stats">
+                                <span class="skill-heal">治療: +4 HP</span>
+                                <span class="skill-cd">冷卻: 2 回合</span>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-key">3</div>
+                            <div class="skill-info">
+                                <div class="skill-name">🌟 勝利之斬（大絕）</div>
+                                <div class="skill-desc">集中全力的強力一擊，暴擊傷害極高！</div>
+                            </div>
+                            <div class="skill-stats">
+                                <span class="skill-damage">傷害: 5 (暴擊: 10)</span>
+                                <span class="skill-cd">冷卻: 5 回合</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 戰鬥機制 -->
+                <div class="help-section">
+                    <h4><i class="fas fa-cogs"></i> 戰鬥機制</h4>
+                    <ul style="color: var(--text-secondary); padding-left: 20px; line-height: 1.8;">
+                        <li><strong>初始血量：</strong>雙方皆為 20 HP</li>
+                        <li><strong>回合制：</strong>勇者先手 → 龍王後手 → 回合結束</li>
+                        <li><strong>暴擊率：</strong>10% 機率造成雙倍傷害</li>
+                        <li><strong>勝利條件：</strong>將對方 HP 降至 0 以下</li>
+                        <li><strong>平手：</strong>雙方同時歸零（極少見）</li>
+                    </ul>
+                </div>
+
+                <!-- 策略提示 -->
+                <div class="tip-box">
+                    <h5><i class="fas fa-lightbulb"></i> 戰術小技巧</h5>
+                    <ul>
+                        <li>💡 大絕開場風險高，建議先消耗龍王血量</li>
+                        <li>💡 當血量低於 8 時，考慮使用治療保命</li>
+                        <li>💡 治療後下一回合敵人會攻擊，要算好血量</li>
+                        <li>💡 觀察冷卻時間，合理規劃技能使用順序</li>
+                        <li>💡 自動模式 AI 會隨機選擇，手動模式更具策略性</li>
+                    </ul>
+                </div>
+
+                <!-- 難度說明 -->
+                <div class="help-section">
+                    <h4><i class="fas fa-sliders-h"></i> 難度說明</h4>
+                    <div class="skill-list">
+                        <div class="skill-item" style="border-left: 3px solid #51cf66;">
+                            <div class="skill-key" style="background: #51cf66;">簡</div>
+                            <div class="skill-info">
+                                <div class="skill-name" style="color: #51cf66;">簡單模式</div>
+                                <div class="skill-desc">龍王 AI 較弱，適合新手練習</div>
+                            </div>
+                        </div>
+                        <div class="skill-item" style="border-left: 3px solid #ffd43b;">
+                            <div class="skill-key" style="background: #ffd43b;">普</div>
+                            <div class="skill-info">
+                                <div class="skill-name" style="color: #ffd43b;">普通模式</div>
+                                <div class="skill-desc">標準難度，公平對決</div>
+                            </div>
+                        </div>
+                        <div class="skill-item" style="border-left: 3px solid #ff6b6b;">
+                            <div class="skill-key" style="background: #ff6b6b;">難</div>
+                            <div class="skill-info">
+                                <div class="skill-name" style="color: #ff6b6b;">困難模式</div>
+                                <div class="skill-desc">龍王 AI 更聰明，挑戰高手</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="../static/js/config.js"></script>
+    <script src="../static/js/ui.js"></script>
+    <script src="../static/js/player.js"></script>
+    <script src="../static/js/api.js"></script>
+    <script src="../static/js/handlers.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. 初始化玩家名稱
+            initPlayerName();
+            
+            // 2. 啟動粒子系統
+            new ParticleSystem();
+            
+            // 3. 綁定按鈕事件
+            setupEventHandlers();
+            
+            // 4. 綁定玩法說明模態框
+            setupHelpModal();
+            
+            // 5. 綁定難度選擇
+            setupDifficultySelector();
+            
+            // 6. 判斷頁面並載入數據
+            if (document.getElementById('fullHistoryList')) {
+                loadAllHistory();
+            } else {
+                loadStats();
+                loadCharacterStats();
+                loadRecentGames();
+                initWebSocket();
+            }
+        });
+        
+        // 玩法說明模態框
+        function setupHelpModal() {
+            const helpBtn = document.getElementById('helpBtn');
+            const helpModal = document.getElementById('helpModal');
+            const closeBtn = document.getElementById('closeHelpModal');
+            
+            helpBtn?.addEventListener('click', () => {
+                helpModal.style.display = 'flex';
+            });
+            
+            closeBtn?.addEventListener('click', () => {
+                helpModal.style.display = 'none';
+            });
+            
+            window.addEventListener('click', (e) => {
+                if (e.target === helpModal) {
+                    helpModal.style.display = 'none';
+                }
+            });
+        }
+        
+        // 難度選擇
+        function setupDifficultySelector() {
+            const btns = document.querySelectorAll('.difficulty-btn');
+            btns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    const difficulty = btn.dataset.difficulty;
+                    window.GameConfig.difficulty = difficulty;
+                    localStorage.setItem('gameDifficulty', difficulty);
+                    
+                    const diffNames = { easy: '簡單', normal: '普通', hard: '困難' };
+                    showNotification(`難度已設為: ${diffNames[difficulty]}`);
+                });
+            });
+            
+            // 載入已儲存的難度
+            const savedDifficulty = localStorage.getItem('gameDifficulty') || 'normal';
+            window.GameConfig.difficulty = savedDifficulty;
+            document.querySelector(`.difficulty-btn[data-difficulty="${savedDifficulty}"]`)?.classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=Press+Start+2P&display=swap");
+
+:root {
+  /* 科技色系 */
+  --bg-dark: #0a0e27;
+  --bg-card: #151a2f;
+  --bg-elevated: #1a1f3a;
+  
+  /* 霓虹色 */
+  --neon-cyan: #00ffff;
+  --neon-magenta: #ff00ff;
+  --neon-purple: #ff00ff; /* 修正變數一致性 */
+  --neon-yellow: #ffff00;
+  --neon-green: #00ff00;
+  
+  /* 角色色彩 */
+  --dragon-color: #ff3366;
+  --dragon-glow: rgba(255, 51, 102, 0.5);
+  --person-color: #00d9ff;
+  --person-glow: rgba(0, 217, 255, 0.5);
+  
+  /* 文字 */
+  --text-primary: #ffffff;
+  --text-secondary: #8b9dc3;
+  --text-muted: #4a5568;
+  
+  /* 字體 */
+  --font-tech: "Orbitron", sans-serif;
+  --font-body: "Rajdhani", sans-serif;
+  --font-pixel: "Press Start 2P", cursive;
+  
+  /* 邊框與陰影 */
+  --border-tech: 2px solid rgba(0, 255, 255, 0.3);
+  --glow-cyan: 0 0 20px rgba(0, 255, 255, 0.5);
+  --glow-magenta: 0 0 20px rgba(255, 0, 255, 0.5);
+}

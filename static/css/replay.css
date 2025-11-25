@@ -1,0 +1,75 @@
+.replay-content {
+  font-family: var(--font-body);
+  line-height: 1.8;
+  color: var(--text-primary);
+}
+
+.replay-header {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid rgba(0, 255, 255, 0.2);
+}
+
+.replay-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  position: relative;
+  padding-left: 30px;
+}
+
+.replay-timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--neon-cyan), var(--neon-magenta));
+  opacity: 0.3;
+}
+
+.replay-event {
+  position: relative;
+  padding: 15px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.3s;
+  animation: fadeInUp 0.5s ease forwards;
+  opacity: 0;
+}
+
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.replay-event:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateX(5px);
+}
+
+.replay-event.dragon { border-left: 3px solid var(--dragon-color); }
+.replay-event.person { border-left: 3px solid var(--person-color); }
+.replay-event.system { border-left: 3px solid var(--neon-cyan); }
+
+.event-marker {
+  position: absolute;
+  left: -24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid var(--bg-card);
+  box-shadow: 0 0 10px currentColor;
+}
+
+.event-content { display: flex; flex-direction: column; gap: 8px; }
+.event-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.event-turn { font-family: var(--font-tech); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+.event-actor { font-family: var(--font-tech); font-size: 13px; }
+.event-action { font-size: 15px; color: var(--text-primary); font-weight: 500; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.event-value {
+  padding: 2px 10px; background: rgba(255, 215, 0, 0.2); border: 1px solid gold; border-radius: 12px;
+  color: gold; font-family: var(--font-tech); font-size: 13px; font-weight: 700;
+}
+.event-details { font-size: 13px; color: var(--text-secondary); padding-left: 24px; font-style: italic; }

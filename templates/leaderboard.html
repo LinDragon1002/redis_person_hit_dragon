@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>排行榜 - 龍王 vs 勇者</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .leaderboard-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .leaderboard-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            overflow: hidden;
+        }
+        
+        .leaderboard-header {
+            padding: 20px 25px;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.1));
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .leaderboard-header i {
+            font-size: 1.5em;
+            color: var(--neon-cyan);
+        }
+        
+        .leaderboard-header h3 {
+            margin: 0;
+            color: #fff;
+            font-size: 1.2em;
+        }
+        
+        .leaderboard-list {
+            padding: 15px;
+        }
+        
+        .leaderboard-item {
+            display: grid;
+            grid-template-columns: 50px 1fr auto;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .leaderboard-item:hover {
+            background: rgba(0, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .leaderboard-item.rank-1 {
+            border-left-color: #ffd700;
+            background: linear-gradient(90deg, rgba(255, 215, 0, 0.15), transparent);
+        }
+        
+        .leaderboard-item.rank-2 {
+            border-left-color: #c0c0c0;
+            background: linear-gradient(90deg, rgba(192, 192, 192, 0.1), transparent);
+        }
+        
+        .leaderboard-item.rank-3 {
+            border-left-color: #cd7f32;
+            background: linear-gradient(90deg, rgba(205, 127, 50, 0.1), transparent);
+        }
+        
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .rank-1 .rank-badge {
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: #000;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+        
+        .rank-2 .rank-badge {
+            background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
+            color: #000;
+        }
+        
+        .rank-3 .rank-badge {
+            background: linear-gradient(135deg, #cd7f32, #8b4513);
+            color: #fff;
+        }
+        
+        .rank-badge.normal {
+            background: rgba(100, 100, 100, 0.5);
+            color: var(--text-secondary);
+        }
+        
+        .item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .item-title {
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .item-subtitle {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+        
+        .item-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            font-family: var(--font-tech);
+        }
+        
+        .item-value.damage { color: #ff6b6b; }
+        .item-value.rounds { color: var(--neon-cyan); }
+        .item-value.wins { color: #51cf66; }
+        
+        .page-title {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .page-title h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .page-title p {
+            color: var(--text-secondary);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state i {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        /* 玩家排行榜樣式 */
+        .player-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .player-stat {
+            text-align: center;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            font-size: 0.8em;
+        }
+        
+        .player-stat-value {
+            font-weight: bold;
+            color: var(--neon-cyan);
+        }
+        
+        .player-stat-label {
+            color: var(--text-muted);
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particleCanvas"></canvas>
+    
+    <nav class="tech-navbar">
+        <div class="container navbar-content">
+            <div class="navbar-left">
+                <a href="/" style="text-decoration: none;">
+                    <div class="logo-container">
+                        <i class="fas fa-dragon"></i>
+                        <span class="brand-text">BATTLE ARENA</span>
+                    </div>
+                </a>
+            </div>
+            <ul class="navbar-links">
+                <li><a href="/"><i class="fas fa-home"></i> 返回首頁</a></li>
+                <li><a href="#" class="active"><i class="fas fa-trophy"></i> 排行榜</a></li>
+                <li><a href="/history"><i class="fas fa-history"></i> 全部紀錄</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container main-content">
+        <div class="page-title">
+            <h1><i class="fas fa-trophy"></i> 榮耀殿堂</h1>
+            <p>記錄每一場傳奇戰役，見證最強戰士的誕生</p>
+        </div>
+
+        <div class="leaderboard-container">
+            <!-- 最高傷害排行 -->
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <i class="fas fa-fire"></i>
+                    <h3>勇者最高傷害</h3>
+                </div>
+                <div class="leaderboard-list" id="damageLeaderboard">
+                    <div class="loading-tech">
+                        <div class="loading-spinner"></div>
+                        <span>載入排行榜...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最長回合排行 -->
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <i class="fas fa-clock"></i>
+                    <h3>史詩級持久戰</h3>
+                </div>
+                <div class="leaderboard-list" id="roundsLeaderboard">
+                    <div class="loading-tech">
+                        <div class="loading-spinner"></div>
+                        <span>載入排行榜...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 龍王勝場 -->
+            <div class="leaderboard-card">
+                <div class="leaderboard-header" style="background: linear-gradient(135deg, rgba(255, 51, 102, 0.2), rgba(255, 51, 102, 0.05));">
+                    <i class="fas fa-dragon" style="color: var(--dragon-color);"></i>
+                    <h3>龍王榮耀 (勝場統計)</h3>
+                </div>
+                <div class="leaderboard-list" id="dragonWinsBoard">
+                    <div class="loading-tech">
+                        <div class="loading-spinner"></div>
+                        <span>載入統計數據...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 勇者勝場 -->
+            <div class="leaderboard-card">
+                <div class="leaderboard-header" style="background: linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(0, 217, 255, 0.05));">
+                    <i class="fas fa-hat-wizard" style="color: var(--person-color);"></i>
+                    <h3>勇者傳說 (勝場統計)</h3>
+                </div>
+                <div class="leaderboard-list" id="personWinsBoard">
+                    <div class="loading-tech">
+                        <div class="loading-spinner"></div>
+                        <span>載入統計數據...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="../static/js/config.js"></script>
+    <script src="../static/js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            new ParticleSystem();
+            loadLeaderboards();
+        });
+        
+        async function loadLeaderboards() {
+            // 載入最高傷害排行
+            await loadDamageLeaderboard();
+            
+            // 載入最長回合排行
+            await loadRoundsLeaderboard();
+            
+            // 載入勝場統計
+            await loadWinStats();
+        }
+        
+        async function loadDamageLeaderboard() {
+            const container = document.getElementById('damageLeaderboard');
+            try {
+                const response = await fetch('/api/leaderboard');
+                const data = await response.json();
+                
+                if (data.error || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-chart-bar"></i>
+                            <p>尚無排行數據</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = data.map((item, index) => `
+                    <div class="leaderboard-item rank-${index + 1}">
+                        <div class="rank-badge ${index >= 3 ? 'normal' : ''}">${index + 1}</div>
+                        <div class="item-info">
+                            <div class="item-title">戰鬥 #${item.game_id}</div>
+                            <div class="item-subtitle">單場最高輸出</div>
+                        </div>
+                        <div class="item-value damage">${item.damage}</div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('載入傷害排行失敗:', error);
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>載入失敗</p></div>`;
+            }
+        }
+        
+        async function loadRoundsLeaderboard() {
+            const container = document.getElementById('roundsLeaderboard');
+            try {
+                const response = await fetch('/api/leaderboard/rounds');
+                const data = await response.json();
+                
+                if (data.error || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-hourglass-half"></i>
+                            <p>尚無排行數據</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = data.map((item, index) => `
+                    <div class="leaderboard-item rank-${index + 1}">
+                        <div class="rank-badge ${index >= 3 ? 'normal' : ''}">${index + 1}</div>
+                        <div class="item-info">
+                            <div class="item-title">戰鬥 #${item.game_id}</div>
+                            <div class="item-subtitle">持久戰紀錄</div>
+                        </div>
+                        <div class="item-value rounds">${item.rounds} 回合</div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('載入回合排行失敗:', error);
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>載入失敗</p></div>`;
+            }
+        }
+        
+        async function loadWinStats() {
+            const dragonContainer = document.getElementById('dragonWinsBoard');
+            const personContainer = document.getElementById('personWinsBoard');
+            
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+                
+                // 龍王統計
+                dragonContainer.innerHTML = `
+                    <div class="leaderboard-item rank-1">
+                        <div class="rank-badge"><i class="fas fa-crown"></i></div>
+                        <div class="item-info">
+                            <div class="item-title">龍王總勝場</div>
+                            <div class="item-subtitle">勝率: ${stats.dragon_win_rate}%</div>
+                        </div>
+                        <div class="item-value" style="color: var(--dragon-color);">${stats.dragon_wins}</div>
+                    </div>
+                    <div class="leaderboard-item">
+                        <div class="rank-badge normal"><i class="fas fa-gamepad"></i></div>
+                        <div class="item-info">
+                            <div class="item-title">總戰鬥場次</div>
+                            <div class="item-subtitle">包含所有玩家</div>
+                        </div>
+                        <div class="item-value" style="color: var(--neon-cyan);">${stats.total_games}</div>
+                    </div>
+                `;
+                
+                // 勇者統計
+                personContainer.innerHTML = `
+                    <div class="leaderboard-item rank-1">
+                        <div class="rank-badge"><i class="fas fa-crown"></i></div>
+                        <div class="item-info">
+                            <div class="item-title">勇者總勝場</div>
+                            <div class="item-subtitle">勝率: ${stats.person_win_rate}%</div>
+                        </div>
+                        <div class="item-value" style="color: var(--person-color);">${stats.person_wins}</div>
+                    </div>
+                    <div class="leaderboard-item">
+                        <div class="rank-badge normal"><i class="fas fa-handshake"></i></div>
+                        <div class="item-info">
+                            <div class="item-title">平手場次</div>
+                            <div class="item-subtitle">雙方同歸於盡</div>
+                        </div>
+                        <div class="item-value" style="color: #ffd700;">${stats.draws}</div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('載入勝場統計失敗:', error);
+                dragonContainer.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>載入失敗</p></div>`;
+                personContainer.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>載入失敗</p></div>`;
+            }
+        }
+    </script>
+</body>
+</html>
