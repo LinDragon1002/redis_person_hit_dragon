@@ -1,0 +1,459 @@
+/* ========== 戰鬥區域樣式 (v5) ========== */
+
+/* 戰鬥區域容器 */
+#webBattleArea {
+    width: 800px;
+    height: 500px;
+    margin: 20px auto;
+    position: relative;
+    border: 3px solid var(--neon-cyan);
+    border-radius: 15px;
+    box-shadow: 0 0 50px rgba(0, 255, 255, 0.3), inset 0 0 50px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+
+    /* ★★★ 戰鬥背景 ★★★ */
+    background:
+        /* 網格線 */
+        linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+        /* 漸層背景 */
+        radial-gradient(ellipse at 30% 80%, rgba(255, 51, 102, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(0, 217, 255, 0.15) 0%, transparent 50%),
+        /* 主背景 */
+        linear-gradient(180deg,
+            #0a0a1a 0%,
+            #1a1a3a 30%,
+            #2a1a2a 50%,
+            #1a2a3a 70%,
+            #0a1a2a 100%);
+    background-size: 50px 50px, 50px 50px, 100% 100%, 100% 100%, 100% 100%;
+}
+
+/* 戰鬥區域掃描線動畫 */
+#webBattleArea::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+    animation: battleScan 3s linear infinite;
+    z-index: 10;
+}
+
+@keyframes battleScan {
+    0% {
+        top: 0;
+        opacity: 0.8;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+
+    100% {
+        top: 100%;
+        opacity: 0.8;
+    }
+}
+
+/* 地面效果 */
+#webBattleArea::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.5));
+    pointer-events: none;
+}
+
+/* ========== 角色精靈 ========== */
+.character-sprite {
+    position: absolute;
+    width: 200px;
+    height: auto;
+    transition: transform 0.2s ease;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+    z-index: 5;
+}
+
+/* ★★★ 受傷效果 - 會自動恢復 ★★★ */
+.character-sprite.effect-damage {
+    animation: damageShake 0.5s ease-out;
+    filter: brightness(2) saturate(0) sepia(1) hue-rotate(-50deg) saturate(6) drop-shadow(0 0 20px #ff0000);
+}
+
+@keyframes damageShake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10% {
+        transform: translateX(-10px) rotate(-2deg);
+    }
+
+    20% {
+        transform: translateX(10px) rotate(2deg);
+    }
+
+    30% {
+        transform: translateX(-10px) rotate(-2deg);
+    }
+
+    40% {
+        transform: translateX(10px) rotate(2deg);
+    }
+
+    50% {
+        transform: translateX(-5px);
+    }
+
+    60% {
+        transform: translateX(5px);
+    }
+
+    70% {
+        transform: translateX(-3px);
+    }
+
+    80% {
+        transform: translateX(3px);
+    }
+
+    90% {
+        transform: translateX(-1px);
+    }
+}
+
+/* 攻擊動作 */
+.character-sprite.effect-attack {
+    animation: attackLunge 0.3s ease-out;
+}
+
+@keyframes attackLunge {
+
+    0%,
+    100% {
+        transform: translateX(0) scale(1);
+    }
+
+    50% {
+        transform: translateX(30px) scale(1.1);
+    }
+}
+
+/* 勇者攻擊（向右衝） */
+#personSprite.effect-attack {
+    animation: attackLungeRight 0.3s ease-out;
+}
+
+@keyframes attackLungeRight {
+
+    0%,
+    100% {
+        transform: scaleX(-1) translateX(0);
+    }
+
+    50% {
+        transform: scaleX(-1) translateX(-30px) scale(1.1);
+    }
+}
+
+/* ========== 浮動傷害數字 ========== */
+.floating-damage {
+    position: absolute;
+    font-family: 'Orbitron', 'Impact', sans-serif;
+    font-size: 2.5em;
+    font-weight: 900;
+    pointer-events: none;
+    z-index: 100;
+    animation: floatUpDamage 1.2s ease-out forwards;
+
+    /* ★★★ 預設黃色傷害，與紅色人物區分 ★★★ */
+    color: #ffff00;
+    text-shadow:
+        0 0 10px #ff8800,
+        3px 3px 0 #000,
+        -3px -3px 0 #000,
+        3px -3px 0 #000,
+        -3px 3px 0 #000,
+        0 4px 0 #000;
+}
+
+@keyframes floatUpDamage {
+    0% {
+        transform: translateY(0) scale(0.5);
+        opacity: 0;
+    }
+
+    20% {
+        transform: translateY(-20px) scale(1.3);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(-100px) scale(1);
+        opacity: 0;
+    }
+}
+
+/* ========== 勝利王冠 ========== */
+.victory-crown {
+    position: absolute;
+    font-size: 3.5em;
+    z-index: 100;
+    filter: drop-shadow(0 0 15px gold) drop-shadow(0 0 30px rgba(255, 215, 0, 0.5));
+    animation: crownBounce 1s ease-in-out infinite, crownGlow 2s ease-in-out infinite;
+}
+
+@keyframes crownBounce {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(-5deg);
+    }
+
+    50% {
+        transform: translateY(-15px) rotate(5deg);
+    }
+}
+
+@keyframes crownGlow {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 15px gold) drop-shadow(0 0 30px rgba(255, 215, 0, 0.5));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 25px gold) drop-shadow(0 0 50px rgba(255, 215, 0, 0.8));
+    }
+}
+
+/* ========== HP 顯示 ========== */
+.hp-container {
+    font-family: var(--font-tech);
+    padding: 10px 15px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hp-value {
+    font-size: 1.8em;
+    font-weight: bold;
+}
+
+.hp-value.dragon {
+    color: var(--dragon-color);
+    text-shadow: 0 0 10px var(--dragon-color);
+}
+
+.hp-value.person {
+    color: var(--person-color);
+    text-shadow: 0 0 10px var(--person-color);
+}
+
+.hp-value.critical {
+    color: #ff4444 !important;
+    animation: hpBlink 0.5s ease-in-out infinite;
+}
+
+@keyframes hpBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+@keyframes hpCritical {
+
+    0%,
+    100% {
+        opacity: 1;
+        text-shadow: 0 0 20px #ff0000;
+    }
+
+    50% {
+        opacity: 0.3;
+        text-shadow: 0 0 5px #ff0000;
+    }
+}
+
+/* ========== 技能按鈕 ========== */
+.skill-btn-cyber {
+    position: relative;
+    min-width: 140px;
+    padding: 15px 25px;
+    margin: 5px;
+    font-family: var(--font-tech);
+    font-size: 1em;
+    font-weight: 600;
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 255, 255, 0.05));
+    border: 2px solid var(--neon-cyan);
+    border-radius: 10px;
+    color: var(--neon-cyan);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.skill-btn-cyber:hover:not(:disabled) {
+    background: rgba(0, 255, 255, 0.2);
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.5);
+    transform: translateY(-3px);
+}
+
+.skill-btn-cyber.ready {
+    animation: readyPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes readyPulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(0, 255, 255, 0.6); }
+}
+
+/* 冷卻中狀態 */
+.skill-btn-cyber.on-cooldown {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: rgba(50, 50, 50, 0.5) !important;
+    border-color: #555 !important;
+    color: #666 !important;
+    box-shadow: none !important;
+    animation: none !important;
+}
+
+.skill-btn-cyber.on-cooldown::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(0, 0, 0, 0.1) 10px,
+        rgba(0, 0, 0, 0.1) 20px
+    );
+}
+
+.skill-btn-cyber .cd-indicator {
+    display: none;
+    position: absolute;
+    top: 5px; right: 5px;
+    font-size: 0.8em;
+    font-weight: bold;
+    color: #ff4444;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid #ff4444;
+}
+
+.skill-btn-cyber.on-cooldown .cd-indicator {
+    display: block;
+}
+
+@keyframes btnReady {
+
+    0%,
+    100% {
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 25px rgba(0, 255, 255, 0.6), 0 0 40px rgba(0, 255, 255, 0.3);
+    }
+}
+
+@keyframes cdPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* ========== 戰鬥狀態文字 ========== */
+#battleStatus {
+    position: absolute;
+    width: 100%;
+    top: 45%;
+    text-align: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2em;
+    pointer-events: none;
+    z-index: 50;
+    text-shadow: 0 0 20px black, 0 4px 8px rgba(0, 0, 0, 0.8);
+}
+
+
+/* === 戰鬥特效樣式 === */
+
+/* 1. 受傷震動 + 變紅 */
+@keyframes shake-red {
+    0% { transform: translateX(0); filter: brightness(1); }
+    25% { transform: translateX(-10px); filter: sepia(1) hue-rotate(-50deg) saturate(5) brightness(1.5); } /* 變紅 */
+    50% { transform: translateX(10px); }
+    75% { transform: translateX(-10px); }
+    100% { transform: translateX(0); filter: brightness(1); }
+}
+
+.anim-damage {
+    animation: shake-red 0.4s ease-in-out;
+}
+
+/* 2. 攻擊衝刺 */
+@keyframes lunge {
+    0% { transform: translateX(0) scale(1); }
+    50% { transform: translateX(30px) scale(1.1); }
+    100% { transform: translateX(0) scale(1); }
+}
+
+/* 勇者 (原本有 scaleX(-1) 所以要特別處理方向) */
+#personSprite.anim-attack {
+    animation: lunge-person 0.3s ease-out;
+}
+@keyframes lunge-person {
+    0% { transform: scaleX(-1) translateX(0); }
+    50% { transform: scaleX(-1) translateX(-30px); } /* 往右衝 */
+    100% { transform: scaleX(-1) translateX(0); }
+}
+
+/* 龍王 */
+#dragonSprite.anim-attack {
+    animation: lunge 0.3s ease-out;
+}
+
+/* 3. 浮動傷害數字 */
+.float-text {
+    position: absolute;
+    font-family: 'Impact', sans-serif;
+    font-size: 32px;
+    font-weight: bold;
+    pointer-events: none; /* 讓點擊穿透 */
+    z-index: 2000;
+    text-shadow: 2px 2px 0 #000;
+    animation: floatUpFade 1s forwards;
+}
+
+.float-text.damage {
+    color: #ff3333;
+}
+
+.float-text.heal {
+    color: #33ff33;
+}
+
+@keyframes floatUpFade {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    50% { transform: translateY(-30px) scale(1.2); opacity: 1; }
+    100% { transform: translateY(-60px) scale(1); opacity: 0; }
+}

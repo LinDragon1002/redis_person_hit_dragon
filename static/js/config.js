@@ -4,6 +4,8 @@ window.GameConfig = {
     soundEnabled: true,
     currentPlayerName: localStorage.getItem("playerName") || "",
     socket: null,
-    // 新增：難度設定 (easy, normal, hard)
-    difficulty: localStorage.getItem("gameDifficulty") || "normal"
+    // 難度設定 (easy, normal, hard)
+    difficulty: localStorage.getItem("gameDifficulty") || "normal",
+    // 顯示模式 (web, pygame)
+    displayMode: "web"
 };

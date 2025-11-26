@@ -2,69 +2,50 @@
 
 function initPlayerName() {
     const modal = document.getElementById('playerNameModal');
-    if (!modal) return; // 防止在沒有模態框的頁面報錯
+    if (!modal) return;
     
     const input = document.getElementById('playerNameInput');
-    const confirmBtn = document.getElementById('confirmPlayerName');
-    const rememberCheckbox = document.getElementById('rememberName');
     
-    // 檢查是否需要記住名字
-    const shouldRemember = localStorage.getItem('rememberPlayerName') !== 'false';
-    
-    // 如果已經有玩家名稱且選擇記住，直接關閉模態框
-    if (window.GameConfig.currentPlayerName && shouldRemember) {
+    // 1. 先綁定按鍵事件 (不管顯不顯示都要綁，以免稍後手動開啟時按 Enter 沒反應)
+    if (input) {
+        // 移除舊的 event listener 比較麻煩，因為這裡是匿名函式，但 init 只會跑一次所以沒關係
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                startGame(); 
+            }
+        });
+    }
+
+    // ★★★ 關鍵判斷：如果這個分頁已經設定過名字，就不再跳出視窗 ★★★
+    if (sessionStorage.getItem('isPlayerReady') === 'true') {
         modal.style.display = 'none';
-        updatePlayerNameDisplay();
-    } else {
-        modal.style.display = 'flex';
-        if (window.GameConfig.currentPlayerName) {
-            input.value = window.GameConfig.currentPlayerName;
+        
+        // 確保導覽列上的名字有顯示出來
+        if (typeof updatePlayerNameDisplay === 'function') {
+            updatePlayerNameDisplay();
         }
+        return; // 直接結束，不執行下面的開啟視窗與聚焦
     }
     
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            confirmBtn.click();
-        }
-    });
+    // 以下是「第一次進入」或「新開分頁」時的邏輯：強制顯示
+    modal.style.display = 'flex';
     
-    confirmBtn.addEventListener('click', () => {
-        const name = input.value.trim();
-        if (name) {
-            window.GameConfig.currentPlayerName = name;
-            
-            if (rememberCheckbox.checked) {
-                localStorage.setItem('playerName', name);
-                localStorage.setItem('rememberPlayerName', 'true');
-            } else {
-                localStorage.removeItem('playerName');
-                localStorage.setItem('rememberPlayerName', 'false');
-            }
-            
-            modal.style.display = 'none';
-            updatePlayerNameDisplay();
-            
-            showRealtimeNotification({
-                type: 'success',
-                title: '歡迎',
-                message: `${name}，準備開始戰鬥吧！`,
-                duration: 3000
-            });
-        } else {
-            showRealtimeNotification({
-                type: 'warning',
-                title: '請輸入名稱',
-                message: '玩家名稱不能為空',
-                duration: 2000
-            });
-        }
-    });
+    // 預填舊名字 (如果有)
+    const savedName = localStorage.getItem('playerName');
+    if (savedName && input) {
+        input.value = savedName;
+    }
+    
+    // 自動聚焦
+    if (input) {
+        setTimeout(() => input.focus(), 100);
+    }
 }
 
 function updatePlayerNameDisplay() {
     const navbar = document.querySelector('.navbar-content');
-    if (!navbar) return;
+    if (!navbar || !window.GameConfig.currentPlayerName) return;
     
     let playerDisplay = document.getElementById('currentPlayerDisplay');
     
@@ -89,7 +70,12 @@ function updatePlayerNameDisplay() {
 window.changePlayerName = function() {
     const modal = document.getElementById('playerNameModal');
     const input = document.getElementById('playerNameInput');
-    modal.style.display = 'flex';
-    input.value = window.GameConfig.currentPlayerName;
-    input.focus();
+    if (modal) modal.style.display = 'flex';
+    if (input) {
+        input.value = window.GameConfig.currentPlayerName || '';
+        input.focus();
+    }
 };
+
+// 暴露 updatePlayerNameDisplay 給其他模組使用
+window.updatePlayerNameDisplay = updatePlayerNameDisplay;

@@ -15,39 +15,59 @@ function initWebSocket() {
         const socket = window.GameConfig.socket;
 
         socket.on('connect', () => {
-            console.log('WebSocket 已連接');
+            console.log('[WebSocket] 已連接');
             reconnectAttempts = 0;
             updateConnectionStatus(true);
-            showRealtimeNotification({ type: 'success', title: '即時連接已建立', message: '現在可以即時接收戰鬥更新', duration: 3000 });
+            showRealtimeNotification({ 
+                type: 'success', 
+                title: '即時連接已建立', 
+                message: '現在可以即時接收戰鬥更新', 
+                duration: 3000 
+            });
             socket.emit('request_initial_data');
         });
 
         socket.on('connect_error', (error) => {
-            console.error('WebSocket 連接錯誤:', error);
+            console.error('[WebSocket] 連接錯誤:', error);
             reconnectAttempts++;
             updateConnectionStatus(false);
             if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-                console.warn('WebSocket 重連失敗，啟用輪詢模式');
+                console.warn('[WebSocket] 重連失敗，啟用輪詢模式');
                 enablePollingMode();
             }
         });
 
         socket.on('disconnect', (reason) => {
-            console.warn('WebSocket 已斷開:', reason);
+            console.warn('[WebSocket] 已斷開:', reason);
             updateConnectionStatus(false);
         });
 
+        // ★★★ 監聽遊戲更新事件 ★★★
         socket.on('game_update', (data) => {
+            console.log('[WebSocket] 收到 game_update:', data);
             handleGameUpdate(data);
         });
 
+        // 監聯遊戲結束事件
+        socket.on('game_over', (data) => {
+            console.log('[WebSocket] 收到 game_over:', data);
+            const battleStatus = document.getElementById('battleStatus');
+            if (battleStatus) {
+                battleStatus.innerHTML = `<span style="color: gold;">${data.winner} 獲勝！</span>`;
+            }
+        });
+
     } catch (error) {
-        console.error('初始化 WebSocket 失敗:', error);
+        console.error('[WebSocket] 初始化失敗:', error);
         enablePollingMode();
     }
 }
 
+// ★★★ 處理遊戲更新 ★★★
 function handleGameUpdate(data) {
+    console.log('[handleGameUpdate] 處理數據:', data);
+    
+    // 顯示通知
     showRealtimeNotification({
         type: 'success',
         title: '新戰鬥結束',
@@ -55,9 +75,10 @@ function handleGameUpdate(data) {
         duration: 5000
     });
     
+    // 準備遊戲數據格式
     const gameData = {
         game_id: data.game_id,
-        timestamp: data.timestamp,
+        timestamp: data.timestamp || new Date().toISOString(),
         total_rounds: data.total_rounds,
         winner: data.winner,
         player_name: data.player_name || '匿名玩家',
@@ -65,14 +86,25 @@ function handleGameUpdate(data) {
         person_stats: data.person_stats || {}
     };
     
+    // 插入新遊戲到列表
     insertNewGameToList(gameData);
     
+    // ★★★ 重新載入所有統計數據 ★★★
+    console.log('[handleGameUpdate] 重新載入統計數據...');
     Promise.all([
         loadStats(),
-        loadCharacterStats()
-    ]).catch(err => console.error('統計數據更新失敗:', err));
+        loadCharacterStats(),
+        loadRecentGames()
+    ]).then(() => {
+        console.log('[handleGameUpdate] 統計數據更新完成');
+    }).catch(err => {
+        console.error('[handleGameUpdate] 統計數據更新失敗:', err);
+    });
     
-    if (window.GameConfig.soundEnabled) playNotificationSound();
+    // 播放音效
+    if (window.GameConfig.soundEnabled) {
+        playNotificationSound();
+    }
 }
 
 function updateConnectionStatus(isConnected) {
@@ -90,6 +122,7 @@ function updateConnectionStatus(isConnected) {
 }
 
 function enablePollingMode() {
+    console.log('[Polling] 啟用輪詢模式，每 10 秒更新一次');
     setInterval(() => {
         loadStats();
         loadCharacterStats();
@@ -100,84 +133,130 @@ function enablePollingMode() {
 // ========== 數據載入函數 ==========
 async function loadStats() {
     try {
+        console.log('[loadStats] 載入統計數據...');
         const response = await fetch('/api/stats');
+        if (!response.ok) throw new Error('API 回應錯誤: ' + response.status);
         const data = await response.json();
         
-        const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+        console.log('[loadStats] 收到數據:', data);
         
-        setTxt('totalGames', data.total_games);
-        setTxt('avgRounds', data.avg_rounds);
-        setTxt('draws', data.draws);
-        setTxt('dragonWinRate', data.dragon_win_rate + '%');
-        setTxt('personWinRate', data.person_win_rate + '%');
-        setTxt('centerTotal', data.total_games);
-        setTxt('dragonWins', data.dragon_wins);
-        setTxt('personWins', data.person_wins);
+        const setTxt = (id, val) => { 
+            const el = document.getElementById(id); 
+            if(el) {
+                el.textContent = val;
+                // 添加更新動畫
+                el.classList.add('data-updated');
+                setTimeout(() => el.classList.remove('data-updated'), 500);
+            }
+        };
+        
+        setTxt('totalGames', data.total_games || 0);
+        setTxt('avgRounds', data.avg_rounds || 0);
+        setTxt('draws', data.draws || 0);
+        setTxt('dragonWinRate', (data.dragon_win_rate || 0) + '%');
+        setTxt('personWinRate', (data.person_win_rate || 0) + '%');
+        setTxt('centerTotal', data.total_games || 0);
+        setTxt('dragonWins', data.dragon_wins || 0);
+        setTxt('personWins', data.person_wins || 0);
 
         drawWinRateChart(data);
         checkAchievements(data);
+        
+        console.log('[loadStats] 統計數據載入完成');
     } catch (error) {
-        console.error('載入統計資料失敗:', error);
+        console.error('[loadStats] 載入失敗:', error);
     }
 }
 
 async function loadCharacterStats() {
     try {
+        console.log('[loadCharacterStats] 載入角色統計...');
         const response = await fetch('/api/character_stats');
+        if (!response.ok) throw new Error('API 回應錯誤: ' + response.status);
         const data = await response.json();
-        if (data.error) return;
-
-        const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-
-        setTxt('dragonTotalDamage', data.dragon.total_damage);
-        setTxt('dragonAvgDamage', data.dragon.avg_damage);
-        setTxt('dragonTotalHealing', data.dragon.total_healing);
-        setTxt('dragonAvgHealing', data.dragon.avg_healing);
-        setTxt('dragonTotalCrits', data.dragon.total_crits);
         
-        setTxt('personTotalDamage', data.person.total_damage);
-        setTxt('personAvgDamage', data.person.avg_damage);
-        setTxt('personTotalHealing', data.person.total_healing);
-        setTxt('personAvgHealing', data.person.avg_healing);
-        setTxt('personTotalCrits', data.person.total_crits);
+        if (data.error) {
+            console.warn('[loadCharacterStats] API 錯誤:', data.error);
+            return;
+        }
+
+        console.log('[loadCharacterStats] 收到數據:', data);
+
+        const setTxt = (id, val) => { 
+            const el = document.getElementById(id); 
+            if(el) {
+                el.textContent = val;
+                el.classList.add('data-updated');
+                setTimeout(() => el.classList.remove('data-updated'), 500);
+            }
+        };
+
+        // 龍王數據
+        setTxt('dragonTotalDamage', data.dragon?.total_damage || 0);
+        setTxt('dragonAvgDamage', data.dragon?.avg_damage || 0);
+        setTxt('dragonTotalHealing', data.dragon?.total_healing || 0);
+        setTxt('dragonAvgHealing', data.dragon?.avg_healing || 0);
+        setTxt('dragonTotalCrits', data.dragon?.total_crits || 0);
+        
+        // 勇者數據
+        setTxt('personTotalDamage', data.person?.total_damage || 0);
+        setTxt('personAvgDamage', data.person?.avg_damage || 0);
+        setTxt('personTotalHealing', data.person?.total_healing || 0);
+        setTxt('personAvgHealing', data.person?.avg_healing || 0);
+        setTxt('personTotalCrits', data.person?.total_crits || 0);
         
         updateProgressBars(data);
+        
+        console.log('[loadCharacterStats] 角色統計載入完成');
     } catch (error) {
-        console.error('載入角色統計失敗:', error);
+        console.error('[loadCharacterStats] 載入失敗:', error);
     }
 }
 
 function updateProgressBars(data) {
-    const maxDamage = Math.max(data.dragon.total_damage, data.person.total_damage) || 1;
-    const maxHealing = Math.max(data.dragon.total_healing, data.person.total_healing) || 1;
-    const maxCrits = Math.max(data.dragon.total_crits, data.person.total_crits) || 1;
+    if (!data.dragon || !data.person) return;
     
-    const setWidth = (id, val) => { const el = document.getElementById(id); if(el) el.style.width = val + '%'; };
+    const maxDamage = Math.max(data.dragon.total_damage || 1, data.person.total_damage || 1);
+    const maxHealing = Math.max(data.dragon.total_healing || 1, data.person.total_healing || 1);
+    const maxCrits = Math.max(data.dragon.total_crits || 1, data.person.total_crits || 1);
     
-    setWidth('dragonDamageBar', (data.dragon.total_damage / maxDamage) * 100);
-    setWidth('dragonHealBar', (data.dragon.total_healing / maxHealing) * 100);
-    setWidth('dragonCritBar', (data.dragon.total_crits / maxCrits) * 100);
+    const setWidth = (id, val) => { 
+        const el = document.getElementById(id); 
+        if(el) el.style.width = Math.min(val, 100) + '%'; 
+    };
     
-    setWidth('personDamageBar', (data.person.total_damage / maxDamage) * 100);
-    setWidth('personHealBar', (data.person.total_healing / maxHealing) * 100);
-    setWidth('personCritBar', (data.person.total_crits / maxCrits) * 100);
+    setWidth('dragonDamageBar', ((data.dragon.total_damage || 0) / maxDamage) * 100);
+    setWidth('dragonHealBar', ((data.dragon.total_healing || 0) / maxHealing) * 100);
+    setWidth('dragonCritBar', ((data.dragon.total_crits || 0) / maxCrits) * 100);
+    
+    setWidth('personDamageBar', ((data.person.total_damage || 0) / maxDamage) * 100);
+    setWidth('personHealBar', ((data.person.total_healing || 0) / maxHealing) * 100);
+    setWidth('personCritBar', ((data.person.total_crits || 0) / maxCrits) * 100);
 }
 
 // ========== 遊戲列表管理 ==========
 async function loadRecentGames() {
     try {
+        console.log('[loadRecentGames] 載入遊戲記錄...');
         const response = await fetch('/api/recent_games');
+        if (!response.ok) throw new Error('API 回應錯誤: ' + response.status);
         const games = await response.json();
         const gamesList = document.getElementById('gamesList');
         if (!gamesList) return;
         
-        if (games.length === 0) {
-            gamesList.innerHTML = '<div class="loading-tech"><span>尚無戰鬥記錄</span></div>';
+        if (!games || games.length === 0) {
+            gamesList.innerHTML = '<div class="loading-tech"><span>尚無戰鬥記錄，點擊「啟動決鬥」開始！</span></div>';
             return;
         }
+        
         gamesList.innerHTML = games.map(game => createGameItemHTML(game)).join('');
+        console.log('[loadRecentGames] 載入完成:', games.length, '筆');
     } catch (error) {
-        console.error('載入遊戲記錄失敗:', error);
+        console.error('[loadRecentGames] 載入失敗:', error);
+        const gamesList = document.getElementById('gamesList');
+        if (gamesList) {
+            gamesList.innerHTML = '<div class="loading-tech"><span>載入失敗，請檢查伺服器連接</span></div>';
+        }
     }
 }
 
@@ -187,16 +266,17 @@ async function loadAllHistory() {
 
     try {
         const response = await fetch('/api/all_games');
+        if (!response.ok) throw new Error('API 回應錯誤');
         const games = await response.json();
         
-        if (games.length === 0) {
+        if (!games || games.length === 0) {
             container.innerHTML = '<div class="loading-tech"><span>尚無任何戰鬥記錄</span></div>';
             return;
         }
         container.innerHTML = games.map(game => createGameItemHTML(game)).join('');
-        setupFilterButtons(container); // 重綁篩選事件
+        setupFilterButtons(container);
     } catch (error) {
-        console.error('載入完整歷史失敗:', error);
+        console.error('[loadAllHistory] 載入失敗:', error);
         container.innerHTML = '<div class="loading-tech"><i class="fas fa-exclamation-triangle"></i><span> 載入失敗</span></div>';
     }
 }
@@ -205,18 +285,23 @@ function insertNewGameToList(game) {
     const gamesList = document.getElementById('gamesList');
     if (!gamesList) return;
     
+    // 移除「尚無記錄」提示
     const loadingDiv = gamesList.querySelector('.loading-tech');
     if (loadingDiv) gamesList.innerHTML = '';
     
+    // 插入新遊戲到最前面
     const newGameHTML = createGameItemHTML(game);
     gamesList.insertAdjacentHTML('afterbegin', newGameHTML);
     
+    // 高亮動畫
     const newGameElement = gamesList.firstElementChild;
     if (newGameElement) {
-        setTimeout(() => newGameElement.classList.remove('new-game-highlight'), 100);
+        newGameElement.classList.add('new-game-highlight');
+        setTimeout(() => newGameElement.classList.remove('new-game-highlight'), 3000);
         gamesList.scrollTop = 0;
     }
     
+    // 限制最多顯示 20 筆
     const allGames = gamesList.querySelectorAll('.game-item-tech');
     if (allGames.length > 20) {
         for (let i = 20; i < allGames.length; i++) allGames[i].remove();
@@ -232,12 +317,38 @@ function drawWinRateChart(data) {
         window.GameConfig.winRateChart.destroy();
     }
     
+    const dragonWins = data.dragon_wins || 0;
+    const personWins = data.person_wins || 0;
+    const draws = data.draws || 0;
+    
+    // 如果都是 0，顯示空白圖表
+    if (dragonWins === 0 && personWins === 0 && draws === 0) {
+        window.GameConfig.winRateChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['尚無數據'],
+                datasets: [{
+                    data: [1],
+                    backgroundColor: ['#333'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                cutout: '75%'
+            }
+        });
+        return;
+    }
+    
     window.GameConfig.winRateChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['龍王', '勇者', '平手'],
             datasets: [{
-                data: [data.dragon_wins, data.person_wins, data.draws],
+                data: [dragonWins, personWins, draws],
                 backgroundColor: ['#ff3366', '#00d9ff', '#ffd700'],
                 borderWidth: 0,
                 hoverOffset: 10
@@ -259,8 +370,8 @@ function drawWinRateChart(data) {
                     callbacks: {
                         label: function(context) {
                             let value = context.raw;
-                            let total = data.total_games;
-                            let percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                            let total = data.total_games || 1;
+                            let percentage = Math.round((value / total) * 100);
                             return `${value} 場 (${percentage}%)`;
                         }
                     }
@@ -271,17 +382,58 @@ function drawWinRateChart(data) {
     });
 }
 
+// ★★★ 成就系統 ★★★
 function checkAchievements(data) {
-    if (data.total_games >= 1) unlockAchievement('achievement1');
-    if (data.dragon_wins >= 5 || data.person_wins >= 5) unlockAchievement('achievement2');
-    if (data.total_games >= 100) unlockAchievement('achievement3');
+    console.log('[checkAchievements] 檢查成就，數據:', data);
+    
+    // 成就 1: 首勝 - 完成第一場戰鬥
+    if ((data.total_games || 0) >= 1) {
+        unlockAchievement('achievement1');
+    }
+    
+    // 成就 2: 連勝王 - 任一方獲勝 5 場
+    if ((data.dragon_wins || 0) >= 5 || (data.person_wins || 0) >= 5) {
+        unlockAchievement('achievement2');
+    }
+    
+    // 成就 3: 百戰老將 - 完成 100 場戰鬥
+    if ((data.total_games || 0) >= 100) {
+        unlockAchievement('achievement3');
+    }
+    
+    // 成就 4: 暴擊大師 - 這需要從角色統計獲取
+    // 會在 loadCharacterStats 中處理
 }
 
 function unlockAchievement(id) {
     const badge = document.getElementById(id);
-    if (badge && badge.classList.contains('locked')) {
+    if (!badge) {
+        console.warn('[unlockAchievement] 找不到成就元素:', id);
+        return;
+    }
+    
+    if (badge.classList.contains('locked')) {
+        console.log('[unlockAchievement] 解鎖成就:', id);
         badge.classList.remove('locked');
         badge.classList.add('unlocked');
-        showNotification(`成就解鎖：${badge.querySelector('.badge-name').textContent}`);
+        
+        // 顯示解鎖通知
+        const badgeName = badge.querySelector('.badge-name');
+        if (badgeName) {
+            showNotification(`🏆 成就解鎖：${badgeName.textContent}`);
+            showRealtimeNotification({
+                type: 'success',
+                title: '🏆 成就解鎖！',
+                message: badgeName.textContent,
+                duration: 5000
+            });
+        }
+    }
+}
+
+// 檢查暴擊成就（從角色統計）
+function checkCritAchievement(totalCrits) {
+    if (totalCrits >= 50) {
+        unlockAchievement('achievement4');
     }
 }

@@ -1,0 +1,176 @@
+/* ========== 成就系統 - 科技風格 ========== */
+
+/* 成就徽章基礎樣式 */
+.achievement-badge {
+    background: rgba(0,0,0,0.4);
+    border: 2px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.5s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 鎖定狀態 */
+.achievement-badge.locked {
+    opacity: 0.5;
+    filter: grayscale(100%);
+}
+
+.achievement-badge.locked .badge-icon {
+    color: #444 !important;
+}
+
+.achievement-badge.locked .badge-name {
+    color: #666;
+}
+
+.achievement-badge.locked::before {
+    content: '🔒';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3em;
+    opacity: 0.3;
+    z-index: 10;
+}
+
+/* ★★★ 解鎖狀態 - 超級明顯 ★★★ */
+.achievement-badge.unlocked {
+    opacity: 1;
+    filter: none;
+    border-color: #ffd700;
+    border-width: 3px;
+    background: linear-gradient(135deg, 
+        rgba(255, 215, 0, 0.2) 0%, 
+        rgba(255, 140, 0, 0.15) 50%,
+        rgba(255, 215, 0, 0.2) 100%);
+    box-shadow: 
+        0 0 30px rgba(255, 215, 0, 0.6),
+        0 0 60px rgba(255, 215, 0, 0.3),
+        inset 0 0 20px rgba(255, 215, 0, 0.1);
+    animation: achievementGlow 2s ease-in-out infinite;
+}
+
+/* 解鎖後持續發光動畫 */
+@keyframes achievementGlow {
+    0%, 100% {
+        box-shadow: 
+            0 0 30px rgba(255, 215, 0, 0.6),
+            0 0 60px rgba(255, 215, 0, 0.3),
+            inset 0 0 20px rgba(255, 215, 0, 0.1);
+    }
+    50% {
+        box-shadow: 
+            0 0 50px rgba(255, 215, 0, 0.8),
+            0 0 80px rgba(255, 215, 0, 0.5),
+            inset 0 0 30px rgba(255, 215, 0, 0.2);
+    }
+}
+
+/* 解鎖後的圖標樣式 */
+.achievement-badge.unlocked .badge-icon {
+    animation: iconPulse 1.5s ease-in-out infinite;
+    font-size: 2.5em !important;
+}
+
+@keyframes iconPulse {
+    0%, 100% {
+        transform: scale(1);
+        text-shadow: 0 0 10px currentColor;
+    }
+    50% {
+        transform: scale(1.15);
+        text-shadow: 0 0 25px currentColor, 0 0 40px currentColor;
+    }
+}
+
+/* 解鎖後的名稱樣式 */
+.achievement-badge.unlocked .badge-name {
+    color: #ffd700;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* 解鎖後的描述樣式 */
+.achievement-badge.unlocked .badge-desc {
+    color: #ffecb3;
+}
+
+/* 解鎖標籤 - 顯眼的 "已解鎖" 標籤 */
+.achievement-badge.unlocked::after {
+    content: '✨ 已解鎖 ✨';
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75em;
+    font-weight: bold;
+    color: #000;
+    background: linear-gradient(90deg, #ffd700, #ffaa00, #ffd700);
+    padding: 4px 12px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    animation: labelShine 2s linear infinite;
+}
+
+@keyframes labelShine {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+
+/* 成就徽章圖標顏色 */
+#achievement1 .badge-icon { color: #ff6b6b; }
+#achievement2 .badge-icon { color: #ffd43b; }
+#achievement3 .badge-icon { color: #a855f7; }
+#achievement4 .badge-icon { color: #4ade80; }
+
+.achievement-badge.unlocked#achievement1 .badge-icon { color: #ff6b6b; }
+.achievement-badge.unlocked#achievement2 .badge-icon { color: #ffd43b; }
+.achievement-badge.unlocked#achievement3 .badge-icon { color: #a855f7; }
+.achievement-badge.unlocked#achievement4 .badge-icon { color: #4ade80; }
+
+/* ========== 數據更新動畫 ========== */
+.data-updated {
+    animation: dataFlash 0.5s ease;
+}
+
+@keyframes dataFlash {
+    0% {
+        color: var(--neon-cyan);
+        text-shadow: 0 0 15px var(--neon-cyan);
+        transform: scale(1.1);
+    }
+    100% {
+        color: inherit;
+        text-shadow: none;
+        transform: scale(1);
+    }
+}
+
+/* ========== 新遊戲高亮動畫 ========== */
+.game-item-tech.new-game-highlight {
+    animation: newGameGlow 2s ease-out;
+}
+
+@keyframes newGameGlow {
+    0% {
+        box-shadow: 0 0 0 rgba(0, 255, 255, 0);
+        border-color: var(--neon-cyan);
+    }
+    20% {
+        box-shadow: 0 0 40px rgba(0, 255, 255, 0.9);
+        border-color: var(--neon-cyan);
+    }
+    100% {
+        box-shadow: none;
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* ========== 進度條動畫 ========== */
+.warrior-stats [id$="Bar"] {
+    transition: width 0.8s ease-out;
+}

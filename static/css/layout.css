@@ -72,8 +72,15 @@ body {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { filter: drop-shadow(0 0 10px var(--neon-cyan)); }
-  50% { filter: drop-shadow(0 0 20px var(--neon-cyan)); }
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 10px var(--neon-cyan));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 20px var(--neon-cyan));
+  }
 }
 
 .brand-text {
@@ -116,8 +123,15 @@ body {
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .status-text {
@@ -181,6 +195,15 @@ body {
   transform: scale(1.2);
 }
 
+.control-panel {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.hidden {
+  display: none !important;
+}
+
 /* ========== 響應式設計 ========== */
 @media (max-width: 1200px) {
   .dashboard-grid {
@@ -192,12 +215,15 @@ body {
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
+
   .warriors-section {
     grid-template-columns: 1fr;
   }
+
   .control-panel {
     flex-direction: column;
   }
+
   .tech-btn {
     width: 100%;
   }
@@ -208,13 +234,16 @@ body {
     flex-direction: column;
     gap: 15px;
   }
+
   .navbar-links {
     flex-wrap: wrap;
     justify-content: center;
   }
+
   .glitch-text {
     font-size: 2em;
   }
+
   .achievements-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -224,6 +253,7 @@ body {
   .achievements-grid {
     grid-template-columns: 1fr;
   }
+
   .filter-buttons {
     flex-wrap: wrap;
   }

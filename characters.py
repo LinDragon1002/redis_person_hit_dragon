@@ -151,6 +151,7 @@ class Role():
         執行攻擊
         choice: 手動選擇的技能 (1/2/3)，None 則由 AI 決定
         """
+        
         if choice:
             self.skillchose = choice
         else:
@@ -217,6 +218,21 @@ class Role():
                 self.total_damage_dealt += damage
                 enemy.status_time = 60
             damage_val = damage
+        
+        if redis_client and game_id:
+            try:
+                event_data = {
+                    'turn': current_round,
+                    'actor': self.name,
+                    'action': action_name,
+                    'value': str(damage_val), # 轉為字串確保相容性
+                    'details': detail_msg,
+                    'timestamp': str(datetime.now())
+                }
+                redis_client.xadd(f'game:{game_id}:stream', event_data)
+            except Exception as e:
+                print(f"Stream error: {e}")
+                
 
         # Redis Stream Logging
         if redis_client and game_id:

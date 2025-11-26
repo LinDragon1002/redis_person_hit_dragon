@@ -138,26 +138,32 @@ function showNotification(message) {
 }
 
 function playNotificationSound() {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.value = 800;
-    oscillator.type = 'sine';
-    
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.3);
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (e) {
+        console.warn('無法播放音效:', e);
+    }
 }
 
 // ========== HTML 生成器 ==========
 function createGameItemHTML(game) {
-    const date = new Date(game.timestamp);
+    if (!game) return '';
+    
+    const date = game.timestamp ? new Date(game.timestamp) : new Date();
     const winnerClass = game.winner === '龍王' ? 'dragon' : 
                         game.winner === '勇者' ? 'person' : 'draw';
     const winnerDisplay = game.winner === '平手' 
@@ -169,12 +175,16 @@ function createGameItemHTML(game) {
             <i class="fas fa-user-circle"></i> ${game.player_name}
          </div>` : '';
     
+    // 安全取值
+    const dragonStats = game.dragon_stats || {};
+    const personStats = game.person_stats || {};
+    
     return `
-        <div class="game-item-tech winner-${winnerClass} new-game-highlight" data-game-id="${game.game_id}">
+        <div class="game-item-tech winner-${winnerClass} new-game-highlight" data-game-id="${game.game_id || 0}">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <div style="font-family: var(--font-tech); font-size: 14px; color: #888;">
-                        #${game.game_id}
+                        #${game.game_id || 0}
                     </div>
                     <div style="padding: 4px 12px; background: var(--${winnerClass === 'dragon' ? 'dragon-color' : winnerClass === 'person' ? 'person-color' : 'neon-yellow'}); color: ${winnerClass === 'draw' ? '#000' : '#fff'}; border-radius: 12px; font-size: 12px; font-weight: 700;">
                         ${winnerDisplay}
@@ -182,7 +192,7 @@ function createGameItemHTML(game) {
                     ${playerNameDisplay}
                 </div>
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <button class="replay-btn-tech" data-game-id="${game.game_id}" title="查看戰鬥回放">
+                    <button class="replay-btn-tech" data-game-id="${game.game_id || 0}" title="查看戰鬥回放">
                         <i class="fas fa-play-circle"></i> 回放
                     </button>
                     <div style="font-size: 11px; color: #666;">
@@ -194,23 +204,23 @@ function createGameItemHTML(game) {
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 12px; font-size: 13px;">
                 <div style="text-align: center; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px;">
                     <div style="color: #888; font-size: 11px;">回合</div>
-                    <div style="color: #fff; font-weight: 700; font-size: 16px;">${game.total_rounds}</div>
+                    <div style="color: #fff; font-weight: 700; font-size: 16px;">${game.total_rounds || 0}</div>
                 </div>
                 <div style="text-align: center; padding: 8px; background: rgba(255,51,102,0.1); border-radius: 6px;">
                     <div style="color: #888; font-size: 11px;">龍王 HP</div>
-                    <div style="color: #ff3366; font-weight: 700; font-size: 16px;">${game.dragon_stats.final_hp}</div>
+                    <div style="color: #ff3366; font-weight: 700; font-size: 16px;">${dragonStats.final_hp || 0}</div>
                 </div>
                 <div style="text-align: center; padding: 8px; background: rgba(0,217,255,0.1); border-radius: 6px;">
                     <div style="color: #888; font-size: 11px;">勇者 HP</div>
-                    <div style="color: #00d9ff; font-weight: 700; font-size: 16px;">${game.person_stats.final_hp}</div>
+                    <div style="color: #00d9ff; font-weight: 700; font-size: 16px;">${personStats.final_hp || 0}</div>
                 </div>
                 <div style="text-align: center; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px;">
                     <div style="color: #888; font-size: 11px;">龍王傷害</div>
-                    <div style="color: #fff; font-weight: 700; font-size: 16px;">${game.dragon_stats.total_damage_dealt}</div>
+                    <div style="color: #fff; font-weight: 700; font-size: 16px;">${dragonStats.total_damage_dealt || 0}</div>
                 </div>
                 <div style="text-align: center; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px;">
                     <div style="color: #888; font-size: 11px;">勇者傷害</div>
-                    <div style="color: #fff; font-weight: 700; font-size: 16px;">${game.person_stats.total_damage_dealt}</div>
+                    <div style="color: #fff; font-weight: 700; font-size: 16px;">${personStats.total_damage_dealt || 0}</div>
                 </div>
             </div>
         </div>

@@ -1,0 +1,316 @@
+/* ========== 戰士數據 - 科技遊戲風格 ========== */
+
+/* 戰士卡片整體 */
+.warrior-card {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(20, 20, 40, 0.8) 100%);
+    border: 2px solid;
+    border-radius: 15px;
+    padding: 25px;
+    position: relative;
+    overflow: hidden;
+}
+
+.warrior-card.dragon-side,
+.warrior-card[style*="dragon-color"] {
+    border-color: var(--dragon-color);
+    box-shadow: 0 0 30px rgba(255, 51, 102, 0.2), inset 0 0 30px rgba(255, 51, 102, 0.05);
+}
+
+.warrior-card.person-side,
+.warrior-card[style*="person-color"] {
+    border-color: var(--person-color);
+    box-shadow: 0 0 30px rgba(0, 217, 255, 0.2), inset 0 0 30px rgba(0, 217, 255, 0.05);
+}
+
+/* 掃描線效果 */
+.warrior-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, currentColor, transparent);
+    animation: scanLine 3s linear infinite;
+}
+
+@keyframes scanLine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* ========== 數據統計區塊 - 科技風格 ========== */
+.warrior-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* 單一統計項目 */
+.stat-row-cyber {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 15px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.stat-row-cyber:hover {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+    transform: translateX(5px);
+}
+
+/* 統計標題列 */
+.stat-header-cyber {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.stat-label-cyber {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Orbitron', 'Rajdhani', sans-serif;
+    font-size: 0.9em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-label-cyber i {
+    font-size: 1.2em;
+}
+
+.stat-label-cyber.damage { color: #ff6b6b; }
+.stat-label-cyber.damage i { text-shadow: 0 0 10px #ff6b6b; }
+
+.stat-label-cyber.heal { color: #4ade80; }
+.stat-label-cyber.heal i { text-shadow: 0 0 10px #4ade80; }
+
+.stat-label-cyber.crit { color: #ffd700; }
+.stat-label-cyber.crit i { text-shadow: 0 0 10px #ffd700; }
+
+/* 平均值徽章 */
+.avg-badge-cyber {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75em;
+    padding: 4px 10px;
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 15px;
+    color: var(--neon-cyan);
+}
+
+/* ========== 進度條 - 霓虹風格 ========== */
+.progress-container-cyber {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.progress-bar-cyber {
+    flex: 1;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 進度條背景網格 */
+.progress-bar-cyber::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 10px,
+        rgba(255, 255, 255, 0.03) 10px,
+        rgba(255, 255, 255, 0.03) 11px
+    );
+    pointer-events: none;
+}
+
+/* 進度條填充 */
+.progress-fill-cyber {
+    height: 100%;
+    border-radius: 10px;
+    position: relative;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+/* 傷害進度條 - 紅色 */
+.progress-fill-cyber.damage {
+    background: linear-gradient(90deg, #ff3366, #ff6b6b, #ff8888);
+    box-shadow: 0 0 20px rgba(255, 51, 102, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+
+/* 治療進度條 - 綠色 */
+.progress-fill-cyber.heal {
+    background: linear-gradient(90deg, #22c55e, #4ade80, #86efac);
+    box-shadow: 0 0 20px rgba(74, 222, 128, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+
+/* 暴擊進度條 - 金色 */
+.progress-fill-cyber.crit {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24, #fcd34d);
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+
+/* 進度條閃光動畫 */
+.progress-fill-cyber::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* 數值顯示 - 科技字體 */
+.stat-value-cyber {
+    min-width: 80px;
+    font-family: 'Orbitron', 'Courier New', monospace;
+    font-size: 1.4em;
+    font-weight: 700;
+    text-align: right;
+    padding: 5px 12px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    text-shadow: 0 0 10px currentColor;
+}
+
+.stat-value-cyber.damage { color: #ff6b6b; border-color: rgba(255, 107, 107, 0.3); }
+.stat-value-cyber.heal { color: #4ade80; border-color: rgba(74, 222, 128, 0.3); }
+.stat-value-cyber.crit { color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); }
+
+/* ========== 核心數據圖示修復 ========== */
+.stat-icon {
+    width: 55px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 26px;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-icon.games {
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(0, 255, 255, 0.1));
+    border: 2px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+.stat-icon.rounds {
+    background: linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(255, 0, 255, 0.1));
+    border: 2px solid var(--neon-magenta);
+    color: var(--neon-magenta);
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+}
+
+.stat-icon.draws {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
+    border: 2px solid #ffd700;
+    color: #ffd700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+/* ========== 技能按鈕 CD 狀態 ========== */
+.skill-btn {
+    position: relative;
+    min-width: 120px;
+    padding: 12px 20px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.skill-btn.on-cooldown {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(100, 100, 100, 0.3) !important;
+    border-color: #555 !important;
+    color: #888 !important;
+}
+
+.skill-btn.on-cooldown::after {
+    content: attr(data-cd);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Orbitron', monospace;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #ff4444;
+    text-shadow: 0 0 10px #ff4444;
+}
+
+.skill-btn.ready {
+    animation: readyPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes readyPulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(0, 255, 255, 0.6); }
+}
+
+/* ========== HP 顯示科技風格 ========== */
+.hp-display {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.5em;
+    font-weight: bold;
+    padding: 5px 15px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hp-display.dragon {
+    color: var(--dragon-color);
+    border-color: rgba(255, 51, 102, 0.5);
+    text-shadow: 0 0 10px var(--dragon-color);
+}
+
+.hp-display.person {
+    color: var(--person-color);
+    border-color: rgba(0, 217, 255, 0.5);
+    text-shadow: 0 0 10px var(--person-color);
+}
+
+.hp-display.critical {
+    color: #ff4444;
+    animation: hpCritical 0.5s ease-in-out infinite;
+}
+
+@keyframes hpCritical {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}

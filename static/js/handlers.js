@@ -1,4 +1,4 @@
-// ========== 按鈕事件處理 ==========
+// ========== 按鈕事件處理 (v6) ==========
 function setupEventHandlers() {
     // 音效開關
     document.getElementById('soundIcon')?.addEventListener('click', () => {
@@ -9,16 +9,16 @@ function setupEventHandlers() {
     });
 
     // 手動戰鬥按鈕
-    document.getElementById('runGameBtn')?.addEventListener('click', () => runGame('manual'));
+    // document.getElementById('runGameBtn')?.addEventListener('click', () => runGame('manual'));
 
     // 自動戰鬥按鈕
-    document.getElementById('autoBattleBtn')?.addEventListener('click', () => runGame('auto'));
+    // document.getElementById('autoBattleBtn')?.addEventListener('click', () => runGame('auto'));
 
     // 篩選按鈕 (首頁)
     const gamesList = document.getElementById('gamesList');
     if (gamesList) setupFilterButtons(document);
 
-    // 回放按鈕代理監聽 (支援動態添加)
+    // 回放按鈕代理監聯 (支援動態添加)
     document.body.addEventListener('click', (e) => {
         const replayBtn = e.target.closest('.replay-btn-tech');
         if (replayBtn) {
@@ -29,7 +29,8 @@ function setupEventHandlers() {
 
     // 模態框關閉
     document.querySelector('.close-btn-tech')?.addEventListener('click', () => {
-        document.getElementById('replayModal').style.display = 'none';
+        const replayModal = document.getElementById('replayModal');
+        if (replayModal) replayModal.style.display = 'none';
     });
     
     window.addEventListener('click', (event) => {
@@ -46,7 +47,6 @@ function setupFilterButtons(container) {
             btn.classList.add('active');
             
             const filter = btn.dataset.filter;
-            // 判斷是在首頁還是在歷史頁面
             const targetContainer = document.getElementById('gamesList') || document.getElementById('fullHistoryList');
             if(!targetContainer) return;
 
@@ -62,70 +62,39 @@ function setupFilterButtons(container) {
     });
 }
 
-// 執行遊戲 (手動/自動)
+// ★★★ 執行遊戲 (手動/自動) - v6 修復版 ★★★
 async function runGame(mode) {
     const isAuto = mode === 'auto';
     const btnId = isAuto ? 'autoBattleBtn' : 'runGameBtn';
     const btn = document.getElementById(btnId);
-    const status = document.getElementById('gameStatus');
     
     if(!btn) return;
 
-    btn.disabled = true;
-    status.className = 'game-status-tech running';
-    status.innerHTML = isAuto ? '<i class="fas fa-robot"></i> 自動戰鬥執行中...' : '<i class="fas fa-bolt"></i> 戰鬥進行中...';
+    // 檢查是否已輸入玩家名稱 (透過全域變數 currentPlayerName，這在 game.js 定義)
+    // 注意：game.js 裡的 currentPlayerName 預設是 '匿名玩家'，
+    // 如果要強制輸入，可以檢查它是否為空或者是否還沒設定過
     
-    try {
-        const endpoint = isAuto ? '/api/run_game_auto' : '/api/run_game';
+    // 這裡我們直接呼叫 game.js 的核心啟動函式，因為它已經包含了:
+    // 1. 判斷 Web / Pygame 模式
+    // 2. 呼叫對應的 API
+    // 3. 正確的 UI 顯示/隱藏 (解決你的問題)
+    
+    if (typeof startWebGameBackend === 'function') {
+        console.log(`[Handlers] 呼叫 startWebGameBackend (Auto: ${isAuto})`);
         
-        // 獲取當前難度設定
-        const difficulty = window.GameConfig.difficulty || 'normal';
+        // 為了按鈕的回饋感，稍微停用一下
+        btn.disabled = true;
         
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                player_name: window.GameConfig.currentPlayerName,
-                difficulty: difficulty  // 新增：傳送難度設定
-            })
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-            const game = data.game;
-            status.className = 'game-status-tech success';
-            status.innerHTML = `<i class="fas fa-check"></i> ${isAuto ? '自動' : '手動'}戰鬥完成！${game.winner} 獲勝`;
-            
-            showRealtimeNotification({
-                type: 'success',
-                title: isAuto ? '自動戰鬥完成' : '手動戰鬥完成',
-                message: `${game.winner} 獲勝！回合數: ${game.total_rounds}`,
-                duration: 5000
-            });
-            
-            insertNewGameToList(game);
-            
-            await Promise.all([
-                loadStats(),
-                loadCharacterStats(),
-                loadRecentGames()
-            ]);
-            
-            if (window.GameConfig.soundEnabled) playNotificationSound();
-        } else {
-            status.className = 'game-status-tech error';
-            status.innerHTML = '<i class="fas fa-times"></i> 戰鬥失敗';
+        try {
+            await startWebGameBackend(isAuto);
+        } catch (e) {
+            console.error("啟動遊戲失敗:", e);
+        } finally {
+            btn.disabled = false;
         }
-    } catch (error) {
-        console.error('執行遊戲錯誤:', error);
-        status.className = 'game-status-tech error';
-        status.innerHTML = '<i class="fas fa-exclamation-circle"></i> 連接錯誤';
-    } finally {
-        btn.disabled = false;
-        setTimeout(() => {
-            status.className = 'game-status-tech';
-            status.textContent = '';
-        }, 5000);
+    } else {
+        console.error("找不到 startWebGameBackend 函式，請確認 game.js 是否已載入");
+        alert("系統錯誤：無法啟動遊戲邏輯");
     }
 }
 
@@ -133,6 +102,8 @@ async function runGame(mode) {
 async function showGameReplay(gameId) {
     const modal = document.getElementById('replayModal');
     const replayLog = document.getElementById('replayLog');
+    
+    if (!modal || !replayLog) return;
     
     modal.style.display = 'flex';
     replayLog.innerHTML = '<div class="loading-tech"><div class="loading-spinner"></div><span>載入回放數據...</span></div>';
@@ -146,7 +117,7 @@ async function showGameReplay(gameId) {
             return;
         }
         
-        if (events.length === 0) {
+        if (!events || events.length === 0) {
             replayLog.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">此戰鬥無回放記錄</div>';
             return;
         }
@@ -159,34 +130,21 @@ async function showGameReplay(gameId) {
             const actorColor = actorClass === 'dragon' ? 'var(--dragon-color)' : actorClass === 'person' ? 'var(--person-color)' : 'var(--neon-cyan)';
             
             let actionIcon = '<i class="fas fa-bolt"></i>';
-            if (event.action?.includes('攻擊') || event.action?.includes('Attack')) actionIcon = '<i class="fas fa-bolt"></i>';
-            else if (event.action?.includes('治療') || event.action?.includes('恢復') || event.action?.includes('Heal')) actionIcon = '<i class="fas fa-heart"></i>';
-            else if (event.action?.includes('暴擊') || event.action?.includes('Critical')) actionIcon = '<i class="fas fa-bomb"></i>';
-            else if (event.action?.includes('回合')) actionIcon = '<i class="fas fa-sync-alt"></i>';
-            else if (event.action?.includes('勝利') || event.action?.includes('獲勝')) actionIcon = '<i class="fas fa-trophy"></i>';
-            else if (event.action?.includes('Ultimate') || event.action?.includes('大絕')) actionIcon = '<i class="fas fa-star"></i>';
+            const action = event.action || '';
+            if (action.includes('攻擊') || action.includes('Attack')) actionIcon = '<i class="fas fa-bolt"></i>';
+            else if (action.includes('治療') || action.includes('恢復') || action.includes('Heal')) actionIcon = '<i class="fas fa-heart"></i>';
+            else if (action.includes('暴擊') || action.includes('Critical')) actionIcon = '<i class="fas fa-bomb"></i>';
+            else if (action.includes('回合')) actionIcon = '<i class="fas fa-sync-alt"></i>';
+            else if (action.includes('勝利') || action.includes('獲勝')) actionIcon = '<i class="fas fa-trophy"></i>';
+            else if (action.includes('Ultimate') || action.includes('大絕')) actionIcon = '<i class="fas fa-star"></i>';
             
-            // 翻譯 action 名稱
-            let actionDisplay = event.action || '';
-            const actionTranslations = {
-                'Basic Attack': '普通攻擊',
-                'Heal': '治療',
-                'Ultimate': '大絕招'
-            };
-            if (actionTranslations[actionDisplay]) {
-                actionDisplay = actionTranslations[actionDisplay];
-            }
+            let actionDisplay = action;
+            const actionTranslations = { 'Basic Attack': '普通攻擊', 'Heal': '治療', 'Ultimate': '大絕招' };
+            if (actionTranslations[actionDisplay]) actionDisplay = actionTranslations[actionDisplay];
             
-            // 翻譯 details
             let detailsDisplay = event.details || '';
-            const detailsTranslations = {
-                'Critical Hit!': '💥 暴擊！',
-                'Critical Ultimate!': '💥 暴擊大絕！',
-                'Recovered HP': '❤️ 恢復生命值'
-            };
-            if (detailsTranslations[detailsDisplay]) {
-                detailsDisplay = detailsTranslations[detailsDisplay];
-            }
+            const detailsTranslations = { 'Critical Hit!': '💥 暴擊！', 'Critical Ultimate!': '💥 暴擊大絕！', 'Recovered HP': '❤️ 恢復生命值' };
+            if (detailsTranslations[detailsDisplay]) detailsDisplay = detailsTranslations[detailsDisplay];
             
             html += `
                 <div class="replay-event ${actorClass}" style="animation-delay: ${index * 0.05}s;">
@@ -206,7 +164,7 @@ async function showGameReplay(gameId) {
         replayLog.innerHTML = html;
         
     } catch (error) {
-        console.error('載入回放失敗:', error);
+        console.error('[showGameReplay] 載入失敗:', error);
         replayLog.innerHTML = `<div style="color: var(--dragon-color); text-align: center; padding: 20px;"><i class="fas fa-exclamation-triangle"></i> 發生錯誤</div>`;
     }
 }

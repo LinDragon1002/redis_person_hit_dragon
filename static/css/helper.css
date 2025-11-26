@@ -1,0 +1,276 @@
+/* 玩法說明專用樣式 */
+.help-modal-content {
+    max-width: 600px;
+    width: 95%;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.help-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+    text-align: left;
+}
+
+.help-section h4 {
+    color: var(--neon-cyan);
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.mode-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.mode-card {
+    padding: 15px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.mode-card.manual {
+    border-left: 3px solid var(--person-color);
+}
+
+.mode-card.auto {
+    border-left: 3px solid var(--neon-pink);
+}
+
+.mode-card h5 {
+    color: var(--neon-cyan);
+    margin-bottom: 8px;
+}
+
+.mode-card p {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.skill-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.skill-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border-left: 3px solid var(--neon-cyan);
+}
+
+.skill-key {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--neon-cyan);
+    color: #000;
+    font-weight: bold;
+    border-radius: 6px;
+    font-size: 1.1em;
+}
+
+.skill-info {
+    flex: 1;
+}
+
+.skill-name {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.skill-desc {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+
+.skill-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 0.85em;
+}
+
+.skill-damage {
+    color: #ff6b6b;
+}
+
+.skill-heal {
+    color: #4ade80;
+}
+
+.skill-cd {
+    color: var(--text-secondary);
+}
+
+.tip-box {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+    text-align: left;
+}
+
+.tip-box h5 {
+    color: #ffd700;
+    margin-bottom: 10px;
+}
+
+.tip-box ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text-secondary);
+}
+
+.tip-box li {
+    margin-bottom: 5px;
+}
+
+.close-btn-tech {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5em;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close-btn-tech:hover {
+    color: #ff4444;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.modal-header h3 {
+    color: var(--neon-cyan);
+    margin: 0;
+}
+
+/* .mode-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.mode-card {
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.mode-card.manual {
+    background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(0, 217, 255, 0.05));
+    border: 1px solid rgba(0, 217, 255, 0.3);
+}
+
+.mode-card.auto {
+    background: linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(255, 0, 255, 0.05));
+    border: 1px solid rgba(255, 0, 255, 0.3);
+}
+
+.mode-card h5 {
+    margin-bottom: 10px;
+    font-size: 1em;
+}
+
+.mode-card.manual h5 {
+    color: var(--neon-cyan);
+}
+
+.mode-card.auto h5 {
+    color: var(--neon-purple);
+}
+
+.mode-card p {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    margin: 0;
+} */
+
+/* 幫助按鈕樣式 */
+.help-btn {
+    background: transparent;
+    border: 1px solid rgba(0, 255, 255, 0.5);
+    color: var(--neon-cyan);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.help-btn:hover {
+    background: rgba(0, 255, 255, 0.1);
+    border-color: var(--neon-cyan);
+}
+
+/* 難度選擇樣式 */
+.difficulty-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    justify-content: center;
+}
+
+.difficulty-btn {
+    padding: 8px 16px;
+    border: 2px solid;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.difficulty-btn.easy {
+    border-color: #51cf66;
+    color: #51cf66;
+}
+
+.difficulty-btn.normal {
+    border-color: #ffd43b;
+    color: #ffd43b;
+}
+
+.difficulty-btn.hard {
+    border-color: #ff6b6b;
+    color: #ff6b6b;
+}
+
+.difficulty-btn.active {
+    color: #000;
+}
+
+.difficulty-btn.easy.active {
+    background: #51cf66;
+}
+
+.difficulty-btn.normal.active {
+    background: #ffd43b;
+}
+
+.difficulty-btn.hard.active {
+    background: #ff6b6b;
+}

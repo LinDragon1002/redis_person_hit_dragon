@@ -48,10 +48,10 @@
 @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
 .control-panel { display: flex; gap: 20px; justify-content: center; margin-top: 30px; }
-.game-status-tech { text-align: center; margin-top: 20px; min-height: 30px; font-family: var(--font-body); font-size: 16px; font-weight: 600; }
-.game-status-tech.running { color: var(--neon-yellow); animation: pulse 1s infinite; }
-.game-status-tech.success { color: var(--neon-green); }
-.game-status-tech.error { color: var(--dragon-color); }
+.game-status-tech { margin-top: 15px; padding: 10px 20px; border-radius: 8px; text-align: center; transition: all 0.3s; }
+.game-status-tech.running { background: rgba(0, 255, 255, 0.1); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); }
+.game-status-tech.success { background: rgba(74, 222, 128, 0.1); border: 1px solid #4ade80; color: #4ade80; }
+.game-status-tech.error { background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #ef4444; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 /* ========== 儀表板網格 ========== */
@@ -165,40 +165,59 @@
 /* ========== 戰鬥歷史列表 ========== */
 .battle-history { background: var(--bg-card); border: var(--border-tech); border-radius: 12px; padding: 30px; position: relative; overflow: hidden; }
 .filter-buttons { display: flex; gap: 10px; }
-.filter-btn {
-  padding: 6px 14px; font-size: 12px; font-weight: 600; background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-secondary); border-radius: 6px;
-  cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.5px;
+.filter-btn { 
+    background: rgba(0, 0, 0, 0.5); 
+    border: 2px solid #555; 
+    color: #fff; 
+    padding: 8px 18px; 
+    border-radius: 20px; 
+    cursor: pointer; 
+    transition: all 0.3s; 
+    font-size: 0.9em;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
-.filter-btn:hover { background: rgba(255, 255, 255, 0.1); color: var(--text-primary); }
-.filter-btn.active { background: var(--neon-cyan); color: var(--bg-dark); border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
-
+.filter-btn:hover { 
+    border-color: var(--neon-cyan); 
+    color: var(--neon-cyan); 
+    background: rgba(0, 255, 255, 0.1);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+.filter-btn.active { 
+    border-color: var(--neon-cyan); 
+    color: #000; 
+    background: var(--neon-cyan);
+    font-weight: 700;
+    text-shadow: none;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+}
 .battle-list { max-height: 600px; overflow-y: auto; margin-top: 20px; padding-right: 10px; }
 .battle-list::-webkit-scrollbar { width: 8px; }
 .battle-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
 .battle-list::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 4px; box-shadow: 0 0 10px var(--neon-cyan); }
 .battle-list::-webkit-scrollbar-thumb:hover { background: var(--neon-magenta); }
 
-.loading-tech { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 40px; color: var(--text-secondary); }
-.loading-spinner { width: 50px; height: 50px; border: 4px solid rgba(0, 255, 255, 0.1); border-top: 4px solid var(--neon-cyan); border-radius: 50%; animation: spin 1s linear infinite; }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.loading-tech { text-align: center; padding: 40px; color: var(--text-secondary); }
+.loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(0, 255, 255, 0.3); border-top-color: var(--neon-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.game-item-tech {
-  background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid var(--neon-cyan);
-  border-radius: 8px; padding: 20px; margin-bottom: 15px; transition: all 0.3s; cursor: pointer;
-}
-.game-item-tech:hover { background: rgba(255, 255, 255, 0.06); transform: translateX(8px); box-shadow: 0 4px 20px rgba(0, 255, 255, 0.2); }
+.game-item-tech { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 15px; margin-bottom: 15px; transition: all 0.3s; }
+.game-item-tech:hover { border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 255, 255, 0.1); }
 .game-item-tech.winner-dragon { border-left-color: var(--dragon-color); }
 .game-item-tech.winner-person { border-left-color: var(--person-color); }
 .game-item-tech.winner-draw { border-left-color: var(--neon-yellow); }
 
-.game-item-tech.new-game-highlight { animation: newGamePulse 1.5s ease-out; box-shadow: 0 0 30px rgba(0, 255, 255, 0.6); }
+.game-item-tech.new-game-highlight { animation: highlightNew 2s ease; }
+@keyframes highlightNew { 0% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.8); } 100% { box-shadow: none; } }
 @keyframes newGamePulse { 0% { background: rgba(0, 255, 255, 0.3); transform: scale(1.02); } 50% { background: rgba(0, 255, 255, 0.15); } 100% { background: rgba(255, 255, 255, 0.03); transform: scale(1); } }
 
-.replay-btn-tech {
-  display: flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(0, 255, 255, 0.1);
-  border: 1px solid var(--neon-cyan); border-radius: 6px; color: var(--neon-cyan); font-family: var(--font-body);
-  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.5px;
-}
-.replay-btn-tech:hover { background: rgba(0, 255, 255, 0.2); box-shadow: 0 0 15px rgba(0, 255, 255, 0.4); transform: translateY(-2px); }
+.replay-btn-tech { background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; transition: all 0.3s; }
+.replay-btn-tech:hover { background: var(--neon-cyan); color: #000; }
 .replay-btn-tech:active { transform: translateY(0); }
+
+.filter-btn[data-filter="dragon"]:hover { border-color: var(--dragon-color); color: var(--dragon-color); background: rgba(255, 51, 102, 0.1); }
+.filter-btn[data-filter="dragon"].active { background: var(--dragon-color); border-color: var(--dragon-color); color: #fff; }
+.filter-btn[data-filter="person"]:hover { border-color: var(--person-color); color: var(--person-color); background: rgba(0, 217, 255, 0.1); }
+.filter-btn[data-filter="person"].active { background: var(--person-color); border-color: var(--person-color); color: #000; }
+.filter-btn[data-filter="draw"]:hover { border-color: #ffd700; color: #ffd700; background: rgba(255, 215, 0, 0.1); }
+.filter-btn[data-filter="draw"].active { background: #ffd700; border-color: #ffd700; color: #000; }
