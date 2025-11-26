@@ -9,6 +9,7 @@ class WebBattleGame:
     def __init__(self, game_id, player_name, difficulty='normal'):
         # 設定 SDL 為 dummy 驅動 (無頭模式)
         os.environ["SDL_VIDEODRIVER"] = "dummy"
+        os.environ["SDL_AUDIODRIVER"] = "dummy"
         if not pygame.get_init():
             pygame.init()
             pygame.display.set_mode((1, 1))

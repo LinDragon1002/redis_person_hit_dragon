@@ -5,16 +5,32 @@ import random
 from datetime import datetime
 from config import SX, SY, SKILL_IMG, FONT_PATH
 from database import redis_client
+import os
 
 
 class Role():
     def __init__(self, name, img1, img2, img3, skill1, skill2, skill3, sound1, sound2):
+        def load_img(path):
+            if not os.path.exists(path) and os.path.exists('static/' + path):
+                return pygame.image.load('static/' + path)
+            try:
+                return pygame.image.load(path)
+            except:
+                # 真的找不到就創一個空圖片避免報錯
+                surface = pygame.Surface((100, 100))
+                surface.fill((255, 0, 255)) # 紫色方塊代表缺圖
+                return surface
+            
         self.name = name
-        self.img = pygame.image.load(img1)
-        self.skill_img1 = pygame.image.load(img2)
-        self.skill_img2 = pygame.image.load(img3)
+        self.img = load_img(img1)
+        self.skill_img1 = load_img(img2)
+        self.skill_img2 = load_img(img3)
         self.rect = self.img.get_rect()
-        self.pen = pygame.freetype.Font(FONT_PATH, 30)
+        # 字型載入保護
+        try:
+            self.pen = pygame.freetype.Font(FONT_PATH, 30)
+        except:
+            self.pen = pygame.freetype.SysFont('Arial', 30) # 備用字型
         self.skill1 = self.pen.render(skill1, '#CAE9FF', 'black')[0]
         self.skill2 = self.pen.render(skill2, '#CAE9FF', 'black')[0]
         self.skill3 = self.pen.render(skill3, '#CAE9FF', 'black')[0]
@@ -25,8 +41,34 @@ class Role():
         self.initial_hp = 20
         self.skillchose = 0
         self.sound = 0
-        self.sound1 = pygame.mixer.Sound('images/' + sound1)
-        self.sound2 = pygame.mixer.Sound('images/' + sound2)
+        self.sound1 = None
+        self.sound2 = None
+        try:
+            # 嘗試載入音效，如果路徑不對或驅動有問題，就直接略過
+            s1_path = 'static/images/' + sound1 if os.path.exists('static/images/' + sound1) else 'images/' + sound1
+            s2_path = 'static/images/' + sound2 if os.path.exists('static/images/' + sound2) else 'images/' + sound2
+            
+            # 只有在 mixer 有初始化成功時才載入
+            if pygame.mixer.get_init():
+                self.sound1 = pygame.mixer.Sound(s1_path)
+                self.sound2 = pygame.mixer.Sound(s2_path)
+        except Exception as e:
+            print(f"Warning: 音效載入失敗 ({e})，將以靜音模式執行")
+            # 建立假的播放方法，防止後面程式碼呼叫 .play() 時報錯
+            class DummySound:
+                def play(self): pass
+            self.sound1 = DummySound()
+            self.sound2 = DummySound()
+        
+        # 如果上面載入失敗導致是 None，也補上 Dummy
+        if self.sound1 is None: 
+            class DummySound: 
+                def play(self): pass
+            self.sound1 = DummySound()
+        if self.sound2 is None: 
+            class DummySound: 
+                def play(self): pass
+            self.sound2 = DummySound()
         
         # 統計與 CD
         self.total_damage_dealt = 0
