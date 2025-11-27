@@ -82,7 +82,6 @@
                 <div id="gameContainer" class="hidden">
                     <h2 style="text-align: center; color: var(--neon-cyan); font-family: var(--font-tech);">龍王 VS 勇者</h2>
                     <div id="webBattleArea">
-                        <!-- ★★★ 圖片路徑 - 請確認你的圖片放在這個位置 ★★★ -->
                         <img id="dragonSprite" src="../static/images/dragon_girl.png" class="character-sprite" style="right: 50px; top: 100px;">
                         <img id="personSprite" src="../static/images/person_boy.png" class="character-sprite" style="left: 50px; top: 100px; transform: scaleX(-1);">
                         
@@ -99,7 +98,7 @@
                         <div id="battleStatus" style="position: absolute; width: 100%; top: 50%; text-align: center; font-size: 2em; text-shadow: 0 0 10px black; pointer-events: none;"></div>
                     </div>
 
-                    <!-- ★★★ 技能按鈕 - 顯示 CD 狀態 ★★★ -->
+                    <!--技能按鈕 - 顯示 CD 狀態-->
                     <div class="control-panel" id="skillPanel">
                         <button class="skill-btn-cyber ready" data-skill="1" onclick="sendAction(1)">
                             普攻 (1)
@@ -127,17 +126,17 @@
             </div>
         </header>
 
-        <!-- ★★★ 核心數據儀表板 - 修復圖示 ★★★ -->
+        <!--核心數據儀表板-->
         <div class="dashboard-grid">
             <div class="dash-card stats-panel">
                 <div class="card-header">
-                    <h3><i class="fas fa-database"></i> 核心數據</h3>
+                    <h3><i class="fas fa-database"></i> 核心數據(全部人)</h3>
                 </div>
                 <div class="stats-display">
                     <div class="stat-item">
                         <!-- ★ 修改：使用更清楚的圖示 -->
-                        <div class="stat-icon games" style="background: linear-gradient(135deg, rgba(0,255,255,0.2), rgba(0,255,255,0.1)); border: 2px solid var(--neon-cyan); color: var(--neon-cyan); border-radius: 12px;">
-                            <i class="fas fa-swords" style="font-size: 24px;"></i>
+                        <div class="stat-icon games" style="background: linear-gradient(135deg, rgba(0, 255, 255, 0.22), rgba(0,255,255,0.1)); border: 2px solid var(--neon-cyan); color: var(--neon-cyan); border-radius: 12px;">
+                            <i class="fas fa-gamepad" style="font-size: 24px;"></i>
                         </div>
                         <div class="stat-info">
                             <div class="stat-label">總戰鬥場次</div>
@@ -152,16 +151,6 @@
                         <div class="stat-info">
                             <div class="stat-label">平均回合數</div>
                             <div class="stat-value" id="avgRounds" style="font-family: 'Orbitron', monospace; color: var(--neon-pink);">0</div>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-item">
-                        <div class="stat-icon draws" style="background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,215,0,0.1)); border: 2px solid #ffd700; color: #ffd700; border-radius: 12px;">
-                            <i class="fas fa-handshake" style="font-size: 24px;"></i>
-                        </div>
-                        <div class="stat-info">
-                            <div class="stat-label">平手場次</div>
-                            <div class="stat-value" id="draws" style="font-family: 'Orbitron', monospace; color: #ffd700;">0</div>
                         </div>
                     </div>
                 </div>
@@ -193,13 +182,12 @@
             </div>
         </div>
 
-        <!-- ★★★ 戰士詳細資訊 - 科技風格 ★★★ -->
+        <!--戰士詳細資訊-->
         <div class="warriors-section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0;">
             <!-- 龍王 -->
             <div class="warrior-card dragon-side" style="background: linear-gradient(135deg, rgba(255, 51, 102, 0.1) 0%, rgba(20, 20, 40, 0.8) 100%); border: 2px solid var(--dragon-color); border-radius: 15px; padding: 25px;">
                 <h3 style="color: var(--dragon-color); font-family: var(--font-tech); margin-bottom: 20px;"><i class="fas fa-dragon"></i> 龍王數據</h3>
                 <div style="display: flex; align-items: center; gap: 20px; margin: 15px 0;">
-                    <!-- ★ 圖片路徑說明 -->
                     <img src="../static/images/dragon_girl.png" alt="龍王" style="width: 80px; border-radius: 10px; border: 2px solid var(--dragon-color); box-shadow: 0 0 15px rgba(255, 51, 102, 0.3);">
                     <div>
                         <div style="font-size: 0.9em; color: #888;">焰之支配者</div>
@@ -305,7 +293,7 @@
             </div>
         </div>
 
-        <!-- ★★★ 成就系統 - 更明顯的解鎖效果 ★★★ -->
+        <!--成就系統-->
         <div class="achievements-section" id="achievements-section" style="margin: 30px 0; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 15px; padding: 25px;">
             <div class="card-header">
                 <h3 style="color: #ffd700;"><i class="fas fa-medal"></i> 解鎖成就</h3>
@@ -426,7 +414,7 @@
                         <div class="skill-item">
                             <div class="skill-key">1</div>
                             <div class="skill-info">
-                                <div class="skill-name">⚔️ 光之斬擊（普攻）</div>
+                                <div class="skill-name">光之斬擊（普攻）</div>
                                 <div class="skill-desc">基礎攻擊，有機率暴擊</div>
                             </div>
                             <div class="skill-stats">
@@ -437,7 +425,7 @@
                         <div class="skill-item">
                             <div class="skill-key">2</div>
                             <div class="skill-info">
-                                <div class="skill-name">💚 治癒</div>
+                                <div class="skill-name">治癒</div>
                                 <div class="skill-desc">恢復生命值</div>
                             </div>
                             <div class="skill-stats">
@@ -448,7 +436,7 @@
                         <div class="skill-item">
                             <div class="skill-key">3</div>
                             <div class="skill-info">
-                                <div class="skill-name">🌟 勝利之斬（大絕）</div>
+                                <div class="skill-name">勝利之斬（大絕）</div>
                                 <div class="skill-desc">強力一擊！</div>
                             </div>
                             <div class="skill-stats">
@@ -479,6 +467,7 @@
     <script src="../static/js/api.js"></script>
     <script src="../static/js/game.js"></script>
     <script src="../static/js/handlers.js"></script>
+    <script src="../static/js/helper.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -492,39 +481,6 @@
             loadRecentGames();
             initWebSocket();
         });
-        
-        function setupHelpModal() {
-            const helpBtn = document.getElementById('helpBtn');
-            const helpModal = document.getElementById('helpModal');
-            const closeBtn = document.getElementById('closeHelpModal');
-            
-            helpBtn?.addEventListener('click', () => helpModal.style.display = 'flex');
-            closeBtn?.addEventListener('click', () => helpModal.style.display = 'none');
-            window.addEventListener('click', (e) => { if (e.target === helpModal) helpModal.style.display = 'none'; });
-        }
-        
-        function setupDifficultySelector() {
-            const btns = document.querySelectorAll('.difficulty-btn');
-            btns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    btns.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    
-                    const difficulty = btn.dataset.difficulty;
-                    window.GameConfig.difficulty = difficulty;
-                    localStorage.setItem('gameDifficulty', difficulty);
-                    
-                    const diffNames = { easy: '簡單', normal: '普通', hard: '困難' };
-                    showNotification(`難度已設為: ${diffNames[difficulty]}`);
-                });
-            });
-            
-            // ★★★ 預設普通模式 ★★★
-            const savedDifficulty = localStorage.getItem('gameDifficulty') || 'normal';
-            window.GameConfig.difficulty = savedDifficulty;
-            btns.forEach(b => b.classList.remove('active'));
-            document.querySelector(`.difficulty-btn[data-difficulty="${savedDifficulty}"]`)?.classList.add('active');
-        }
     </script>
 </body>
 </html>

@@ -214,10 +214,33 @@ def get_leaderboard():
             return jsonify([])
         
         top_damage = redis_client.zrevrange('leaderboard:max_damage:person', 0, 4, withscores=True)
+
+        if not top_damage:
+            return jsonify([])
+
+        # 2. 使用 Pipeline 一次抓取所有對應的遊戲詳細資料
+        pipe = redis_client.pipeline()
+        for game_id, _ in top_damage:
+            pipe.get(f'game:{game_id}')
+        games_data = pipe.execute()
         
         leaderboard = []
-        for game_id, damage in top_damage:
-            leaderboard.append({'game_id': game_id, 'damage': int(damage)})
+        for i, (game_id, damage) in enumerate(top_damage):
+            player_name = '未知玩家'
+            
+            # 解析 JSON 取得名字
+            if games_data[i]:
+                try:
+                    game_info = json.loads(games_data[i])
+                    player_name = game_info.get('player_name', '未知玩家')
+                except:
+                    pass
+            
+            leaderboard.append({
+                'game_id': game_id,      # 保留 ID 以便前端若需要連結回放
+                'player_name': player_name, # ★★★ 新增：玩家名稱
+                'damage': int(damage)
+            })
             
         return jsonify(leaderboard)
     except Exception as e:
@@ -232,9 +255,32 @@ def get_rounds_leaderboard():
         
         top_rounds = redis_client.zrevrange('leaderboard:longest_rounds', 0, 4, withscores=True)
         
+        if not top_rounds:
+            return jsonify([])
+
+        # 2. 使用 Pipeline 抓取詳細資料
+        pipe = redis_client.pipeline()
+        for game_id, _ in top_rounds:
+            pipe.get(f'game:{game_id}')
+        games_data = pipe.execute()
+        
+        # 3. 組裝結果
         leaderboard = []
-        for game_id, rounds in top_rounds:
-            leaderboard.append({'game_id': game_id, 'rounds': int(rounds)})
+        for i, (game_id, rounds) in enumerate(top_rounds):
+            player_name = '未知玩家'
+            
+            if games_data[i]:
+                try:
+                    game_info = json.loads(games_data[i])
+                    player_name = game_info.get('player_name', '未知玩家')
+                except:
+                    pass
+
+            leaderboard.append({
+                'game_id': game_id,
+                'player_name': player_name, # ★★★ 新增：玩家名稱
+                'rounds': int(rounds)
+            })
             
         return jsonify(leaderboard)
     except Exception as e:

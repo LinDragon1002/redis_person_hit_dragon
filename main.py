@@ -310,8 +310,6 @@ def run_gui_game(mode='manual', player_name='匿名玩家', difficulty='normal',
             
             # ★★★ 通過 WebSocket 廣播遊戲結果 ★★★
             if socketio:
-                print(f"[WebSocket] 廣播遊戲結果: 遊戲 #{current_game_id}, 勝利者: {winner}")
-                socketio.emit('game_update', game_data)
                 socketio.emit('game_over', {'winner': winner, 'game_id': current_game_id})
             
             game_saved = True

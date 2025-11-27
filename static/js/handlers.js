@@ -80,7 +80,7 @@ async function runGame(mode) {
     // 3. 正確的 UI 顯示/隱藏 (解決你的問題)
     
     if (typeof startWebGameBackend === 'function') {
-        console.log(`[Handlers] 呼叫 startWebGameBackend (Auto: ${isAuto})`);
+        // console.log(`[Handlers] 呼叫 startWebGameBackend (Auto: ${isAuto})`);
         
         // 為了按鈕的回饋感，稍微停用一下
         btn.disabled = true;
@@ -93,7 +93,7 @@ async function runGame(mode) {
             btn.disabled = false;
         }
     } else {
-        console.error("找不到 startWebGameBackend 函式，請確認 game.js 是否已載入");
+        // console.error("找不到 startWebGameBackend 函式，請確認 game.js 是否已載入");
         alert("系統錯誤：無法啟動遊戲邏輯");
     }
 }
@@ -164,7 +164,7 @@ async function showGameReplay(gameId) {
         replayLog.innerHTML = html;
         
     } catch (error) {
-        console.error('[showGameReplay] 載入失敗:', error);
+        // console.error('[showGameReplay] 載入失敗:', error);
         replayLog.innerHTML = `<div style="color: var(--dragon-color); text-align: center; padding: 20px;"><i class="fas fa-exclamation-triangle"></i> 發生錯誤</div>`;
     }
 }

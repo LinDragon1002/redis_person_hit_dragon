@@ -6,6 +6,7 @@ from datetime import datetime
 from config import SX, SY, SKILL_IMG, FONT_PATH
 from database import redis_client
 import os
+from database import log_battle_event
 
 
 class Role():
@@ -261,35 +262,16 @@ class Role():
                 enemy.status_time = 60
             damage_val = damage
         
-        if redis_client and game_id:
-            try:
-                event_data = {
-                    'turn': current_round,
-                    'actor': self.name,
-                    'action': action_name,
-                    'value': str(damage_val), # 轉為字串確保相容性
-                    'details': detail_msg,
-                    'timestamp': str(datetime.now())
-                }
-                redis_client.xadd(f'game:{game_id}:stream', event_data)
-            except Exception as e:
-                print(f"Stream error: {e}")
-                
-
         # Redis Stream Logging
-        if redis_client and game_id:
-            try:
-                event_data = {
-                    'turn': current_round,
-                    'actor': self.name,
-                    'action': action_name,
-                    'value': damage_val,
-                    'details': detail_msg,
-                    'timestamp': str(datetime.now())
-                }
-                redis_client.xadd(f'game:{game_id}:stream', event_data)
-            except Exception as e:
-                print(f"Stream error: {e}")
+        if game_id:
+            log_battle_event(
+                game_id=game_id,
+                turn=current_round,
+                actor=self.name,
+                action=action_name,
+                value=damage_val,
+                details=detail_msg
+            )
 
     def say(self):
         if self.sound <= 0:

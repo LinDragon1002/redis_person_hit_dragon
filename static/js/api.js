@@ -15,7 +15,7 @@ function initWebSocket() {
         const socket = window.GameConfig.socket;
 
         socket.on('connect', () => {
-            console.log('[WebSocket] 已連接');
+            // console.log('[WebSocket] 已連接');
             reconnectAttempts = 0;
             updateConnectionStatus(true);
             showRealtimeNotification({ 
@@ -28,29 +28,29 @@ function initWebSocket() {
         });
 
         socket.on('connect_error', (error) => {
-            console.error('[WebSocket] 連接錯誤:', error);
+            // console.error('[WebSocket] 連接錯誤:', error);
             reconnectAttempts++;
             updateConnectionStatus(false);
             if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-                console.warn('[WebSocket] 重連失敗，啟用輪詢模式');
+                // console.warn('[WebSocket] 重連失敗，啟用輪詢模式');
                 enablePollingMode();
             }
         });
 
         socket.on('disconnect', (reason) => {
-            console.warn('[WebSocket] 已斷開:', reason);
+            // console.warn('[WebSocket] 已斷開:', reason);
             updateConnectionStatus(false);
         });
 
         // ★★★ 監聽遊戲更新事件 ★★★
         socket.on('game_update', (data) => {
-            console.log('[WebSocket] 收到 game_update:', data);
+            // console.log('[WebSocket] 收到 game_update:', data);
             handleGameUpdate(data);
         });
 
         // 監聯遊戲結束事件
         socket.on('game_over', (data) => {
-            console.log('[WebSocket] 收到 game_over:', data);
+            // console.log('[WebSocket] 收到 game_over:', data);
             const battleStatus = document.getElementById('battleStatus');
             if (battleStatus) {
                 battleStatus.innerHTML = `<span style="color: gold;">${data.winner} 獲勝！</span>`;
@@ -58,14 +58,14 @@ function initWebSocket() {
         });
 
     } catch (error) {
-        console.error('[WebSocket] 初始化失敗:', error);
+        // console.error('[WebSocket] 初始化失敗:', error);
         enablePollingMode();
     }
 }
 
 // ★★★ 處理遊戲更新 ★★★
 function handleGameUpdate(data) {
-    console.log('[handleGameUpdate] 處理數據:', data);
+    // console.log('[handleGameUpdate] 處理數據:', data);
     
     // 顯示通知
     showRealtimeNotification({
@@ -90,7 +90,7 @@ function handleGameUpdate(data) {
     insertNewGameToList(gameData);
     
     // ★★★ 重新載入所有統計數據 ★★★
-    console.log('[handleGameUpdate] 重新載入統計數據...');
+    // console.log('[handleGameUpdate] 重新載入統計數據...');
     Promise.all([
         loadStats(),
         loadCharacterStats(),
@@ -122,7 +122,7 @@ function updateConnectionStatus(isConnected) {
 }
 
 function enablePollingMode() {
-    console.log('[Polling] 啟用輪詢模式，每 10 秒更新一次');
+    // console.log('[Polling] 啟用輪詢模式，每 10 秒更新一次');
     setInterval(() => {
         loadStats();
         loadCharacterStats();
@@ -133,12 +133,12 @@ function enablePollingMode() {
 // ========== 數據載入函數 ==========
 async function loadStats() {
     try {
-        console.log('[loadStats] 載入統計數據...');
+        // console.log('[loadStats] 載入統計數據...');
         const response = await fetch('/api/stats');
         if (!response.ok) throw new Error('API 回應錯誤: ' + response.status);
         const data = await response.json();
         
-        console.log('[loadStats] 收到數據:', data);
+        // console.log('[loadStats] 收到數據:', data);
         
         const setTxt = (id, val) => { 
             const el = document.getElementById(id); 
@@ -162,7 +162,7 @@ async function loadStats() {
         drawWinRateChart(data);
         checkAchievements(data);
         
-        console.log('[loadStats] 統計數據載入完成');
+        // console.log('[loadStats] 統計數據載入完成');
     } catch (error) {
         console.error('[loadStats] 載入失敗:', error);
     }
@@ -170,17 +170,17 @@ async function loadStats() {
 
 async function loadCharacterStats() {
     try {
-        console.log('[loadCharacterStats] 載入角色統計...');
+        // console.log('[loadCharacterStats] 載入角色統計...');
         const response = await fetch('/api/character_stats');
         if (!response.ok) throw new Error('API 回應錯誤: ' + response.status);
         const data = await response.json();
         
         if (data.error) {
-            console.warn('[loadCharacterStats] API 錯誤:', data.error);
+            // console.warn('[loadCharacterStats] API 錯誤:', data.error);
             return;
         }
 
-        console.log('[loadCharacterStats] 收到數據:', data);
+        // console.log('[loadCharacterStats] 收到數據:', data);
 
         const setTxt = (id, val) => { 
             const el = document.getElementById(id); 
@@ -207,7 +207,7 @@ async function loadCharacterStats() {
         
         updateProgressBars(data);
         
-        console.log('[loadCharacterStats] 角色統計載入完成');
+        // console.log('[loadCharacterStats] 角色統計載入完成');
     } catch (error) {
         console.error('[loadCharacterStats] 載入失敗:', error);
     }
@@ -237,7 +237,7 @@ function updateProgressBars(data) {
 // ========== 遊戲列表管理 ==========
 async function loadRecentGames() {
     try {
-        console.log('[loadRecentGames] 載入遊戲記錄...');
+        // console.log('[loadRecentGames] 載入遊戲記錄...');
         const response = await fetch('/api/recent_games');
         if (!response.ok) throw new Error('API 回應錯誤: ' + response.status);
         const games = await response.json();
@@ -250,9 +250,9 @@ async function loadRecentGames() {
         }
         
         gamesList.innerHTML = games.map(game => createGameItemHTML(game)).join('');
-        console.log('[loadRecentGames] 載入完成:', games.length, '筆');
+        // console.log('[loadRecentGames] 載入完成:', games.length, '筆');
     } catch (error) {
-        console.error('[loadRecentGames] 載入失敗:', error);
+        // console.error('[loadRecentGames] 載入失敗:', error);
         const gamesList = document.getElementById('gamesList');
         if (gamesList) {
             gamesList.innerHTML = '<div class="loading-tech"><span>載入失敗，請檢查伺服器連接</span></div>';
@@ -276,7 +276,7 @@ async function loadAllHistory() {
         container.innerHTML = games.map(game => createGameItemHTML(game)).join('');
         setupFilterButtons(container);
     } catch (error) {
-        console.error('[loadAllHistory] 載入失敗:', error);
+        // console.error('[loadAllHistory] 載入失敗:', error);
         container.innerHTML = '<div class="loading-tech"><i class="fas fa-exclamation-triangle"></i><span> 載入失敗</span></div>';
     }
 }
@@ -384,7 +384,7 @@ function drawWinRateChart(data) {
 
 // ★★★ 成就系統 ★★★
 function checkAchievements(data) {
-    console.log('[checkAchievements] 檢查成就，數據:', data);
+    // console.log('[checkAchievements] 檢查成就，數據:', data);
     
     // 成就 1: 首勝 - 完成第一場戰鬥
     if ((data.total_games || 0) >= 1) {
@@ -408,22 +408,22 @@ function checkAchievements(data) {
 function unlockAchievement(id) {
     const badge = document.getElementById(id);
     if (!badge) {
-        console.warn('[unlockAchievement] 找不到成就元素:', id);
+        // console.warn('[unlockAchievement] 找不到成就元素:', id);
         return;
     }
     
     if (badge.classList.contains('locked')) {
-        console.log('[unlockAchievement] 解鎖成就:', id);
+        // console.log('[unlockAchievement] 解鎖成就:', id);
         badge.classList.remove('locked');
         badge.classList.add('unlocked');
         
         // 顯示解鎖通知
         const badgeName = badge.querySelector('.badge-name');
         if (badgeName) {
-            showNotification(`🏆 成就解鎖：${badgeName.textContent}`);
+            showNotification(`成就解鎖：${badgeName.textContent}`);
             showRealtimeNotification({
                 type: 'success',
-                title: '🏆 成就解鎖！',
+                title: '成就解鎖！',
                 message: badgeName.textContent,
                 duration: 5000
             });

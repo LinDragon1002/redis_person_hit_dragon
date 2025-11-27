@@ -8,7 +8,6 @@ function initPlayerName() {
     
     // 1. 先綁定按鍵事件 (不管顯不顯示都要綁，以免稍後手動開啟時按 Enter 沒反應)
     if (input) {
-        // 移除舊的 event listener 比較麻煩，因為這裡是匿名函式，但 init 只會跑一次所以沒關係
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -17,7 +16,7 @@ function initPlayerName() {
         });
     }
 
-    // ★★★ 關鍵判斷：如果這個分頁已經設定過名字，就不再跳出視窗 ★★★
+    // 如果這個分頁已經設定過名字，就不再跳出視窗
     if (sessionStorage.getItem('isPlayerReady') === 'true') {
         modal.style.display = 'none';
         
@@ -25,7 +24,7 @@ function initPlayerName() {
         if (typeof updatePlayerNameDisplay === 'function') {
             updatePlayerNameDisplay();
         }
-        return; // 直接結束，不執行下面的開啟視窗與聚焦
+        return;
     }
     
     // 以下是「第一次進入」或「新開分頁」時的邏輯：強制顯示

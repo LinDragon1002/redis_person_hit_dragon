@@ -26,7 +26,7 @@ async function loadAllHistoryWithStats() {
         container.innerHTML = games.map(game => createGameItemHTML(game)).join('');
         
     } catch (error) {
-        console.error('載入完整歷史失敗:', error);
+        // console.error('載入完整歷史失敗:', error);
         container.innerHTML = '<div class="loading-tech"><i class="fas fa-exclamation-triangle"></i><span> 載入失敗，請重試</span></div>';
     }
 }
@@ -166,7 +166,7 @@ async function showGameReplayModal(gameId) {
         replayLog.innerHTML = html;
         
     } catch (error) {
-        console.error('載入回放失敗:', error);
+        // console.error('載入回放失敗:', error);
         replayLog.innerHTML = `<div style="color: var(--dragon-color); text-align: center; padding: 20px;"><i class="fas fa-exclamation-triangle"></i> 發生錯誤</div>`;
     }
 }

@@ -254,3 +254,25 @@ def get_all_games_from_redis():
     except Exception as e:
         print(f"讀取所有歷史紀錄失敗: {e}")
         return []
+    
+
+def log_battle_event(game_id, turn, actor, action, value, details):
+    """
+    將戰鬥事件寫入 Redis Stream
+    """
+    if redis_client is None:
+        return
+
+    try:
+        event_data = {
+            'turn': turn,
+            'actor': actor,
+            'action': action,
+            'value': str(value),  # 轉為字串確保 Redis 相容性
+            'details': details,
+            'timestamp': str(datetime.now())
+        }
+        # 寫入 Stream，key 為 game:{id}:stream
+        redis_client.xadd(f'game:{game_id}:stream', event_data)
+    except Exception as e:
+        print(f"[Database] Stream 寫入錯誤: {e}")

@@ -18,15 +18,15 @@ async function loadDamageLeaderboard() {
             <div class="leaderboard-item rank-${index + 1}">
                 <div class="rank-badge ${index >= 3 ? 'normal' : ''}">${index + 1}</div>
                 <div class="item-info">
-                    <div class="item-title">戰鬥 #${item.game_id}</div>
-                    <div class="item-subtitle">單場最高輸出</div>
+                    <div class="item-title">${item.player_name}</div>
+                    <div class="item-subtitle">戰鬥 #${item.game_id}</div>
                 </div>
                 <div class="item-value damage">${item.damage}</div>
             </div>
         `).join('');
         
     } catch (error) {
-        console.error('載入傷害排行失敗:', error);
+        // console.error('載入傷害排行失敗:', error);
         container.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>載入失敗</p></div>`;
     }
 }
@@ -51,15 +51,15 @@ async function loadRoundsLeaderboard() {
             <div class="leaderboard-item rank-${index + 1}">
                 <div class="rank-badge ${index >= 3 ? 'normal' : ''}">${index + 1}</div>
                 <div class="item-info">
-                    <div class="item-title">戰鬥 #${item.game_id}</div>
-                    <div class="item-subtitle">持久戰紀錄</div>
+                    <div class="item-title">${item.player_name}</div>
+                    <div class="item-subtitle">戰鬥 #${item.game_id}</div>
                 </div>
                 <div class="item-value rounds">${item.rounds} 回合</div>
             </div>
         `).join('');
         
     } catch (error) {
-        console.error('載入回合排行失敗:', error);
+        // console.error('載入回合排行失敗:', error);
         container.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>載入失敗</p></div>`;
     }
 }
@@ -113,7 +113,7 @@ async function loadWinStats() {
         `;
         
     } catch (error) {
-        console.error('載入勝場統計失敗:', error);
+        // console.error('載入勝場統計失敗:', error);
         dragonContainer.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>載入失敗</p></div>`;
         personContainer.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>載入失敗</p></div>`;
     }
