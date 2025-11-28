@@ -130,7 +130,12 @@
         <div class="dashboard-grid">
             <div class="dash-card stats-panel">
                 <div class="card-header">
-                    <h3><i class="fas fa-database"></i> 核心數據(全部人)</h3>
+                    <h3>
+                        <i class="fas fa-database"></i> 核心數據
+                        <span style="font-size: 0.65em; color: #ffd700; margin-left: 8px;">
+                            <i class="fas fa-globe"></i> 全球數據
+                        </span>
+                    </h3>
                 </div>
                 <div class="stats-display">
                     <div class="stat-item">
@@ -158,7 +163,12 @@
 
             <div class="dash-card chart-panel">
                 <div class="card-header">
-                    <h3><i class="fas fa-chart-pie"></i> 勝率分析</h3>
+                    <h3>
+                        <i class="fas fa-chart-pie"></i> 勝率分析
+                        <span style="font-size: 0.65em; color: #ffd700; margin-left: 8px;">
+                            <i class="fas fa-globe"></i> 全球數據
+                        </span>
+                    </h3>
                 </div>
                 <div class="chart-container-tech" style="position: relative; height: 200px;">
                     <canvas id="winRateChart"></canvas>
@@ -186,7 +196,12 @@
         <div class="warriors-section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0;">
             <!-- 龍王 -->
             <div class="warrior-card dragon-side" style="background: linear-gradient(135deg, rgba(255, 51, 102, 0.1) 0%, rgba(20, 20, 40, 0.8) 100%); border: 2px solid var(--dragon-color); border-radius: 15px; padding: 25px;">
-                <h3 style="color: var(--dragon-color); font-family: var(--font-tech); margin-bottom: 20px;"><i class="fas fa-dragon"></i> 龍王數據</h3>
+                <h3 style="color: var(--dragon-color); font-family: var(--font-tech); margin-bottom: 20px;">
+                    <i class="fas fa-dragon"></i> 龍王數據
+                    <span style="font-size: 0.65em; color: #ffd700; margin-left: 8px;">
+                        <i class="fas fa-globe"></i> 全球數據
+                    </span>
+                </h3>
                 <div style="display: flex; align-items: center; gap: 20px; margin: 15px 0;">
                     <img src="../static/images/dragon_girl.png" alt="龍王" style="width: 80px; border-radius: 10px; border: 2px solid var(--dragon-color); box-shadow: 0 0 15px rgba(255, 51, 102, 0.3);">
                     <div>
@@ -242,7 +257,12 @@
 
             <!-- 勇者 -->
             <div class="warrior-card person-side" style="background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(20, 20, 40, 0.8) 100%); border: 2px solid var(--person-color); border-radius: 15px; padding: 25px;">
-                <h3 style="color: var(--person-color); font-family: var(--font-tech); margin-bottom: 20px;"><i class="fas fa-user-ninja"></i> 勇者數據</h3>
+                <h3 style="color: var(--person-color); font-family: var(--font-tech); margin-bottom: 20px;">
+                    <i class="fas fa-user-ninja"></i> 勇者數據
+                    <span style="font-size: 0.65em; color: #ffd700; margin-left: 8px;">
+                        <i class="fas fa-globe"></i> 全球數據
+                    </span>
+                </h3>
                 <div style="display: flex; align-items: center; gap: 20px; margin: 15px 0;">
                     <img src="../static/images/person_boy.png" alt="勇者" style="width: 80px; border-radius: 10px; border: 2px solid var(--person-color); box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);">
                     <div>
@@ -296,28 +316,83 @@
         <!--成就系統-->
         <div class="achievements-section" id="achievements-section" style="margin: 30px 0; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); border-radius: 15px; padding: 25px;">
             <div class="card-header">
-                <h3 style="color: #ffd700;"><i class="fas fa-medal"></i> 解鎖成就</h3>
+                <h3 style="color: #ffd700;"><i class="fas fa-medal"></i> 全球解鎖成就</h3>
+                <p style="font-size: 0.85em; color: #888; margin-top: 8px; margin-bottom: 0;">
+                    <i class="fas fa-users"></i> 當全球玩家達成目標時自動解鎖
+                </p>
             </div>
             <div class="achievements-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px;">
+                <!-- 成就 1: 首勝 -->
                 <div class="achievement-badge locked" id="achievement1">
                     <div class="badge-icon" style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-fire"></i></div>
                     <div class="badge-name" style="font-weight: bold;">首勝</div>
-                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">完成第一場戰鬥</div>
+                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">全球完成第一場戰鬥</div>
                 </div>
+                <!-- 成就 2: 連勝王 -->
                 <div class="achievement-badge locked" id="achievement2">
                     <div class="badge-icon" style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-bolt"></i></div>
                     <div class="badge-name" style="font-weight: bold;">連勝王</div>
-                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">任一方獲勝 5 場</div>
+                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">全球任一方獲勝 5 場</div>
                 </div>
+                <!-- 成就 3: 百戰老將 -->
                 <div class="achievement-badge locked" id="achievement3">
                     <div class="badge-icon" style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-trophy"></i></div>
                     <div class="badge-name" style="font-weight: bold;">百戰老將</div>
-                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">完成 100 場戰鬥</div>
+                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">全球完成 100 場戰鬥</div>
                 </div>
+                <!-- 成就 4: 暴擊大師 -->
                 <div class="achievement-badge locked" id="achievement4">
                     <div class="badge-icon" style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-star"></i></div>
                     <div class="badge-name" style="font-weight: bold;">暴擊大師</div>
-                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">累計 50 次暴擊</div>
+                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">全球累計 50 次暴擊</div>
+                </div>
+                <!-- 成就 5: 療癒之手 -->
+                <div class="achievement-badge locked" id="achievement5">
+                    <div class="badge-icon" style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-heart"></i></div>
+                    <div class="badge-name" style="font-weight: bold;">療癒之手</div>
+                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">全球累計治療 500 HP</div>
+                </div>
+                <!-- 成就 6: 千場傳說 -->
+                <div class="achievement-badge locked" id="achievement6">
+                    <div class="badge-icon" style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-crown"></i></div>
+                    <div class="badge-name" style="font-weight: bold;">千場傳說</div>
+                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">全球完成 1000 場戰鬥</div>
+                </div>
+                <!-- 成就 7: 極限生存 -->
+                <div class="achievement-badge locked" id="achievement7">
+                    <div class="badge-icon" style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-shield-alt"></i></div>
+                    <div class="badge-name" style="font-weight: bold;">極限生存</div>
+                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">單場戰鬥超過 30 回合</div>
+                </div>
+                <!-- 成就 8: 幸運之神 -->
+                <div class="achievement-badge locked" id="achievement8">
+                    <div class="badge-icon" style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-dice"></i></div>
+                    <div class="badge-name" style="font-weight: bold;">幸運之神</div>
+                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">單場連續三次暴擊</div>
+                </div>
+                <!-- 成就 9: 傷害巨炮 -->
+                <div class="achievement-badge locked" id="achievement9">
+                    <div class="badge-icon" style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-bomb"></i></div>
+                    <div class="badge-name" style="font-weight: bold;">傷害巨炮</div>
+                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">單場造成 100+ 傷害</div>
+                </div>
+                <!-- 成就 10: 完美閃避 -->
+                <div class="achievement-badge locked" id="achievement10">
+                    <div class="badge-icon" style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-gem"></i></div>
+                    <div class="badge-name" style="font-weight: bold;">完美閃避</div>
+                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">單場戰鬥無受傷獲勝</div>
+                </div>
+                <!-- 成就 11: 暴擊狂魔 -->
+                <div class="achievement-badge locked" id="achievement11">
+                    <div class="badge-icon" style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-fire-alt"></i></div>
+                    <div class="badge-name" style="font-weight: bold;">暴擊狂魔</div>
+                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">全球累計 500 次暴擊</div>
+                </div>
+                <!-- 成就 12: 治療大師 -->
+                <div class="achievement-badge locked" id="achievement12">
+                    <div class="badge-icon" style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-plus-circle"></i></div>
+                    <div class="badge-name" style="font-weight: bold;">治療大師</div>
+                    <div class="badge-desc" style="font-size: 0.8em; color: #888;">全球累計治療 5000 HP</div>
                 </div>
             </div>
         </div>
@@ -330,7 +405,6 @@
                     <button class="filter-btn active" data-filter="all">全部</button>
                     <button class="filter-btn" data-filter="dragon">龍王勝</button>
                     <button class="filter-btn" data-filter="person">勇者勝</button>
-                    <button class="filter-btn" data-filter="draw">平手</button>
                 </div>
             </div>
             <div id="gamesList" class="battle-list">
@@ -344,7 +418,7 @@
 
     <!-- 玩家名稱輸入模態框 -->
     <div id="playerNameModal" class="modal-tech" style="display: flex;">
-        <div class="modal-content-tech">
+        <div class="modal-content-tech battle-choice">
             <h2 style="color: var(--neon-cyan); font-family: var(--font-tech);"><i class="fas fa-dragon"></i> 戰鬥準備</h2>
             <div style="margin: 20px 0;">
                 <input type="text" id="playerNameInput" placeholder="輸入勇者名稱" 
@@ -365,7 +439,7 @@
                 </div>
             </div>
 
-            <button class="tech-btn" onclick="startGame()">
+            <button class="tech-btn commit-set" onclick="startGame()">
                 <i class="fas fa-check"></i> 確認設定
             </button>
         </div>

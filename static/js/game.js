@@ -14,6 +14,10 @@ let autoTimer = null;
 // 防止連點的鎖定變數
 let isActionPending = false; 
 
+// ★★★ 成就追蹤：連續暴擊計數 ★★★
+let maxConsecutiveCrits = 0;
+let currentConsecutiveCrits = 0;
+
 // 2. 初始化遊戲 (呼叫後端 API 建立遊戲)
 async function startWebGameBackend(auto = false) {
     const difficulty = window.GameConfig.difficulty || 'normal';
@@ -117,11 +121,12 @@ async function startWebGameBackend(auto = false) {
 function triggerNextAutoTurn() {
     if(!currentGameId || !isAutoMode) return;
     
-    // 延遲 1 秒讓動畫播完，再送出請求
+    // 自動模式：動畫更快，所以延遲時間縮短
+    // 計算：actionDelay(400ms) + 額外緩衝(200ms) = 600ms
     autoTimer = setTimeout(() => {
         console.log('[Auto] 請求下一回合...');
         socket.emit('web_auto_action', { game_id: currentGameId });
-    }, 1000);
+    }, 600);
 }
 
 // 4. 發送手動動作 (防連點)
@@ -165,6 +170,22 @@ socket.on('web_update', function(state) {
     // 處理遊戲結束
     if(state.game_over) {
         clearTimeout(autoTimer);
+        
+        // ★★★ 檢查單場戰鬥成就 ★★★
+        if (typeof checkSingleGameAchievements === 'function') {
+            checkSingleGameAchievements({
+                rounds: state.round,
+                winner: state.winner,
+                dragon_stats: state.dragon,
+                person_stats: state.person,
+                consecutive_crits: maxConsecutiveCrits  // 傳遞連續暴擊數
+            });
+        }
+        
+        // 重置連續暴擊計數器
+        maxConsecutiveCrits = 0;
+        currentConsecutiveCrits = 0;
+        
         setTimeout(() => {
              showVictoryCrown(state.winner);
              const battleStatus = document.getElementById('battleStatus');
@@ -183,66 +204,170 @@ socket.on('web_update', function(state) {
     }
 });
 
+// 5.5 更新回合數顯示
+function updateRoundDisplay(round) {
+    const battleStatus = document.getElementById('battleStatus');
+    if (!battleStatus) return;
+    
+    // 在戰鬥狀態區域上方顯示回合數
+    let roundDisplay = document.getElementById('roundDisplay');
+    if (!roundDisplay) {
+        roundDisplay = document.createElement('div');
+        roundDisplay.id = 'roundDisplay';
+        roundDisplay.style.cssText = `
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+            font-family: var(--font-tech);
+            z-index: 10;
+            pointer-events: none;
+        `;
+        const battleArea = document.getElementById('webBattleArea');
+        if (battleArea) {
+            battleArea.appendChild(roundDisplay);
+        }
+    }
+    
+    roundDisplay.innerHTML = `第 ${round} 回合`;
+    
+    // 添加動畫效果
+    roundDisplay.style.animation = 'none';
+    setTimeout(() => {
+        roundDisplay.style.animation = 'roundPulse 0.5s ease';
+    }, 10);
+}
+
 // 6. 更新 UI (血量、特效、CD)
 function updateGameUI(state) {
     const dHpEl = document.getElementById('dragonHp');
     const pHpEl = document.getElementById('personHp');
     const dSprite = document.getElementById('dragonSprite');
     const pSprite = document.getElementById('personSprite');
-    
+    const battleStatus = document.getElementById('battleStatus');
+
+    if(battleStatus && !state.game_over) battleStatus.innerHTML = '';
+
+    // ★★★ 添加回合數顯示 ★★★
+    updateRoundDisplay(state.round);
+
     // 觸發特效 (從事件列表)
-    if (state.turn_events && Array.isArray(state.turn_events)) {
-        state.turn_events.forEach((event, index) => {
-            setTimeout(() => {
+    (async () => {
+        if (state.turn_events && Array.isArray(state.turn_events)) {
+            // 根據是否自動模式調整延遲時間
+            const actionDelay = isAutoMode ? 400 : 800;  // 自動模式更快
+            const displayDelay = isAutoMode ? 200 : 300; // 自動模式顯示更快
+            
+            for (const event of state.turn_events) {
                 const targetSprite = event.target === 'dragon' ? dSprite : pSprite;
                 const attackerSprite = event.target === 'dragon' ? pSprite : dSprite;
+                const attackerName = event.target === 'dragon' ? '勇者' : '龍王';
+                
+                // 1. 顯示誰在行動 (文字提示)
+                if(battleStatus) {
+                    const color = attackerName === '勇者' ? 'var(--person-color)' : 'var(--dragon-color)';
+                    battleStatus.innerHTML = `<span style="color: ${color}; font-size: 1.2em;">${attackerName} 行動中...</span>`;
+                }
 
+                // 2. 觸發攻擊動畫
+                triggerAttackEffect(attackerSprite);
+                
+                // 等待攻擊動畫
+                await new Promise(r => setTimeout(r, displayDelay));
+
+                // 3. 觸發受傷/治療與數字顯示
                 if (event.type === 'damage') {
                     triggerDamageEffect(targetSprite);
                     showFloatingDamage(event.value, targetSprite, 'damage');
-                    if (event.is_crit) {
-                        setTimeout(() => {
-                             showFloatingDamage(null, targetSprite, 'crit');
-                        }, 100);
+                    
+                    // ★★★ 立即更新血量顯示 ★★★
+                    if (event.target === 'dragon') {
+                        if(dHpEl) dHpEl.innerText = Math.max(0, state.dragon.hp);
+                    } else {
+                        if(pHpEl) pHpEl.innerText = Math.max(0, state.person.hp);
                     }
-                    triggerAttackEffect(attackerSprite);
-
+                    
+                    // ★★★ 追蹤連續暴擊（用於「幸運之神」成就）★★★
+                    if (event.is_crit) {
+                        currentConsecutiveCrits++;
+                        maxConsecutiveCrits = Math.max(maxConsecutiveCrits, currentConsecutiveCrits);
+                        // console.log(`[連續暴擊] 當前: ${currentConsecutiveCrits}, 最大: ${maxConsecutiveCrits}`);
+                        
+                        // 暴擊文字稍微慢一點點出來
+                        setTimeout(() => showFloatingDamage(null, targetSprite, 'crit'), 100);
+                    } else {
+                        // 非暴擊時重置連續計數
+                        currentConsecutiveCrits = 0;
+                    }
                 } else if (event.type === 'heal') {
-                    showFloatingDamage(event.value, targetSprite, 'heal');
+                    const healSprite = event.target === 'dragon' ? dSprite : pSprite;
+                    
+                    // 播放跳動動畫
+                    triggerAttackEffect(healSprite);
+                    await new Promise(r => setTimeout(r, displayDelay));
+                    
+                    showFloatingDamage(event.value, healSprite, 'heal');
+                    
+                    // ★★★ 立即更新血量顯示 ★★★
+                    if (event.target === 'dragon') {
+                        if(dHpEl) dHpEl.innerText = state.dragon.hp;
+                    } else {
+                        if(pHpEl) pHpEl.innerText = state.person.hp;
+                    }
+                    
+                    // 添加發光特效
+                    healSprite.style.filter = 'brightness(1.5) sepia(1) hue-rotate(90deg)';
+                    setTimeout(() => healSprite.style.filter = '', 300);
                 }
-            }, index * 300);
-        });
-    }
 
-    // 更新血量數值
-    if(dHpEl) dHpEl.innerText = state.dragon.hp;
-    if(pHpEl) pHpEl.innerText = state.person.hp;
-
-    // 更新按鈕 CD 狀態
-    [1, 2, 3].forEach(id => {
-        const btn = document.querySelector(`button[data-skill="${id}"]`);
-        if(!btn) return;
-        
-        const cd = state.person.cooldowns[id];
-        const indicator = btn.querySelector('.cd-indicator');
-        
-        if(cd > 0) {
-            btn.classList.add('on-cooldown');
-            btn.classList.remove('ready');
-            btn.disabled = true;
-            if(indicator) { indicator.style.display = 'block'; indicator.innerText = cd + 'T'; }
-        } else {
-            btn.classList.remove('on-cooldown');
-            btn.classList.add('ready');
-            btn.disabled = false;
-            // 只有在非鎖定狀態下才啟用按鈕
-            if (!isActionPending) {
-                btn.style.opacity = '1';
-                btn.style.cursor = 'pointer';
+                // 4. 動作間隔（自動模式更快）
+                await new Promise(r => setTimeout(r, actionDelay));
             }
-            if(indicator) { indicator.style.display = 'none'; }
+            
+            // 所有動作結束，清除狀態文字
+            if(battleStatus && !state.game_over) battleStatus.innerHTML = '';
         }
-    });
+
+        // --- 最終確保血量正確 ---
+        if(dHpEl) dHpEl.innerText = state.dragon.hp;
+        if(pHpEl) pHpEl.innerText = state.person.hp;
+        
+        // 調試日誌
+        console.log(`[UI更新] 回合${state.round} - 龍王HP: ${state.dragon.hp}/${state.dragon.max_hp}, 勇者HP: ${state.person.hp}/${state.person.max_hp}`);
+        if (state.game_over) {
+            console.log(`[遊戲結束] 獲勝者: ${state.winner}`);
+        }
+
+        // --- 更新按鈕 CD 狀態 (維持原樣) ---
+        [1, 2, 3].forEach(id => {
+            const btn = document.querySelector(`button[data-skill="${id}"]`);
+            if(!btn) return;
+            
+            const cd = state.person.cooldowns[id];
+            const indicator = btn.querySelector('.cd-indicator');
+            
+            if(cd > 0) {
+                btn.classList.add('on-cooldown');
+                btn.classList.remove('ready');
+                btn.disabled = true;
+                if(indicator) { indicator.style.display = 'block'; indicator.innerText = cd + 'T'; }
+            } else {
+                btn.classList.remove('on-cooldown');
+                btn.classList.add('ready');
+                btn.disabled = false;
+                if (!isActionPending) {
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }
+                if(indicator) { indicator.style.display = 'none'; }
+            }
+        });
+        
+    })(); // 立即執行 async 函式
 }
 
 // 7. 輔助函式：禁用/啟用所有技能按鈕
@@ -417,6 +542,7 @@ async function startGame() {
 
     console.log(`[Config] 設定完成: 玩家=${currentPlayerName}, 模式=${currentDisplayMode}`);
 
+    // 關閉名字輸入框
     const modal = document.getElementById('playerNameModal');
     if (modal) modal.style.display = 'none';
 
@@ -426,6 +552,16 @@ async function startGame() {
     
     const connectionStatus = document.getElementById('connectionStatus');
     if (connectionStatus) connectionStatus.innerText = '等待啟動...';
+    
+    // ★★★ 關鍵修改：確認設定後，如果還沒看過玩法說明，就顯示 ★★★
+    setTimeout(() => {
+        if (!localStorage.getItem('hasSeenHelp')) {
+            const helpModal = document.getElementById('helpModal');
+            if (helpModal) {
+                helpModal.style.display = 'flex';
+            }
+        }
+    }, 300); // 短暫延遲，確保名字輸入框完全關閉
 }
 
 // === 綁定全域變數與事件 ===

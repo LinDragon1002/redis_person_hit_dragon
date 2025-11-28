@@ -20,6 +20,9 @@ class WebBattleGame:
         self.turn_count = 1
         self.winner = None
         self.is_game_over = False
+
+        self.max_consecutive_crits = 0  # 記錄最大連續暴擊數
+        self.current_consecutive_crits = 0  # 當前連續暴擊數
         
         # 載入角色
         d_conf = load_character_from_redis('dragon') or get_default_character_config('dragon')
@@ -87,10 +90,12 @@ class WebBattleGame:
 
         # 檢查勇者是否獲勝
         if self.dragon.hp <= 0:
+            print(f"[回合{self.turn_count}] 龍王HP歸零 ({self.dragon.hp})，勇者獲勝！")
             return self.end_game('勇者', turn_events)
 
         # === 2. 龍王行動 (AI) ===
         # --- 記錄攻擊前的狀態 ---
+        dragon_hp_before_action = self.dragon.hp
         person_hp_before = self.person.hp
         
         self.dragon.attack(self.person, game_id=self.game_id, current_round=self.turn_count)
@@ -106,15 +111,36 @@ class WebBattleGame:
                 'is_crit': is_crit
             })
             self.dragon.status = False
+        
+        # 檢查龍王是否使用了治療技能
+        if self.dragon.skillchose == 2:
+            heal = self.dragon.hp - dragon_hp_before_action
+            if heal > 0:
+                turn_events.append({
+                    'type': 'heal',
+                    'target': 'dragon',
+                    'value': heal
+                })
 
         # 檢查龍王是否獲勝
         if self.person.hp <= 0:
+            print(f"[回合{self.turn_count}] 勇者HP歸零 ({self.person.hp})，龍王獲勝！")
             return self.end_game('龍王', turn_events)
 
         # === 3. 回合結算 ===
         self.turn_count += 1
         self.person.decrement_cooldowns()
         self.dragon.decrement_cooldowns()
+
+        # 勇者攻擊
+        if is_crit:
+            self.current_consecutive_crits += 1
+            self.max_consecutive_crits = max(
+                self.max_consecutive_crits, 
+                self.current_consecutive_crits
+            )
+        else:
+            self.current_consecutive_crits = 0
 
         # 回傳狀態時，附帶這一回合的事件列表
         return self.get_state(turn_events)
@@ -132,6 +158,13 @@ class WebBattleGame:
         """遊戲結束處理"""
         self.winner = winner
         self.is_game_over = True
+        
+        # 調試日誌：記錄遊戲結束時的血量
+        print(f"[遊戲結束] 獲勝者: {winner}")
+        print(f"  龍王最終HP: {self.dragon.hp}/{self.dragon.initial_hp}")
+        print(f"  勇者最終HP: {self.person.hp}/{self.person.initial_hp}")
+        print(f"  總回合數: {self.turn_count}")
+        
         save_game_to_redis(self.game_id, self.dragon, self.person, winner, self.turn_count, self.player_name)
         return self.get_state(last_events)
 

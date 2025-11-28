@@ -2,7 +2,7 @@
 
 /* 成就徽章基礎樣式 */
 .achievement-badge {
-    background: rgba(0,0,0,0.4);
+    background: rgba(0, 0, 0, 0.4);
     border: 2px solid #333;
     border-radius: 12px;
     padding: 20px;
@@ -27,7 +27,6 @@
 }
 
 .achievement-badge.locked::before {
-    content: '🔒';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -43,11 +42,11 @@
     filter: none;
     border-color: #ffd700;
     border-width: 3px;
-    background: linear-gradient(135deg, 
-        rgba(255, 215, 0, 0.2) 0%, 
-        rgba(255, 140, 0, 0.15) 50%,
-        rgba(255, 215, 0, 0.2) 100%);
-    box-shadow: 
+    background: linear-gradient(135deg,
+            rgba(255, 215, 0, 0.2) 0%,
+            rgba(255, 140, 0, 0.15) 50%,
+            rgba(255, 215, 0, 0.2) 100%);
+    box-shadow:
         0 0 30px rgba(255, 215, 0, 0.6),
         0 0 60px rgba(255, 215, 0, 0.3),
         inset 0 0 20px rgba(255, 215, 0, 0.1);
@@ -56,14 +55,17 @@
 
 /* 解鎖後持續發光動畫 */
 @keyframes achievementGlow {
-    0%, 100% {
-        box-shadow: 
+
+    0%,
+    100% {
+        box-shadow:
             0 0 30px rgba(255, 215, 0, 0.6),
             0 0 60px rgba(255, 215, 0, 0.3),
             inset 0 0 20px rgba(255, 215, 0, 0.1);
     }
+
     50% {
-        box-shadow: 
+        box-shadow:
             0 0 50px rgba(255, 215, 0, 0.8),
             0 0 80px rgba(255, 215, 0, 0.5),
             inset 0 0 30px rgba(255, 215, 0, 0.2);
@@ -77,10 +79,13 @@
 }
 
 @keyframes iconPulse {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
         text-shadow: 0 0 10px currentColor;
     }
+
     50% {
         transform: scale(1.15);
         text-shadow: 0 0 25px currentColor, 0 0 40px currentColor;
@@ -102,10 +107,8 @@
 /* 解鎖標籤 - 顯眼的 "已解鎖" 標籤 */
 .achievement-badge.unlocked::after {
     content: '✨ 已解鎖 ✨';
-    position: absolute;
     bottom: 8px;
     left: 50%;
-    transform: translateX(-50%);
     font-size: 0.75em;
     font-weight: bold;
     color: #000;
@@ -117,20 +120,47 @@
 }
 
 @keyframes labelShine {
-    0% { background-position: -200% center; }
-    100% { background-position: 200% center; }
+    0% {
+        background-position: -200% center;
+    }
+
+    100% {
+        background-position: 200% center;
+    }
 }
 
 /* 成就徽章圖標顏色 */
-#achievement1 .badge-icon { color: #ff6b6b; }
-#achievement2 .badge-icon { color: #ffd43b; }
-#achievement3 .badge-icon { color: #a855f7; }
-#achievement4 .badge-icon { color: #4ade80; }
+#achievement1 .badge-icon {
+    color: #ff6b6b;
+}
 
-.achievement-badge.unlocked#achievement1 .badge-icon { color: #ff6b6b; }
-.achievement-badge.unlocked#achievement2 .badge-icon { color: #ffd43b; }
-.achievement-badge.unlocked#achievement3 .badge-icon { color: #a855f7; }
-.achievement-badge.unlocked#achievement4 .badge-icon { color: #4ade80; }
+#achievement2 .badge-icon {
+    color: #ffd43b;
+}
+
+#achievement3 .badge-icon {
+    color: #a855f7;
+}
+
+#achievement4 .badge-icon {
+    color: #4ade80;
+}
+
+.achievement-badge.unlocked#achievement1 .badge-icon {
+    color: #ff6b6b;
+}
+
+.achievement-badge.unlocked#achievement2 .badge-icon {
+    color: #ffd43b;
+}
+
+.achievement-badge.unlocked#achievement3 .badge-icon {
+    color: #a855f7;
+}
+
+.achievement-badge.unlocked#achievement4 .badge-icon {
+    color: #4ade80;
+}
 
 /* ========== 數據更新動畫 ========== */
 .data-updated {
@@ -143,6 +173,7 @@
         text-shadow: 0 0 15px var(--neon-cyan);
         transform: scale(1.1);
     }
+
     100% {
         color: inherit;
         text-shadow: none;
@@ -160,10 +191,12 @@
         box-shadow: 0 0 0 rgba(0, 255, 255, 0);
         border-color: var(--neon-cyan);
     }
+
     20% {
         box-shadow: 0 0 40px rgba(0, 255, 255, 0.9);
         border-color: var(--neon-cyan);
     }
+
     100% {
         box-shadow: none;
         border-color: rgba(255, 255, 255, 0.1);

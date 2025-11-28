@@ -224,3 +224,15 @@
     max-width: 300px;
     justify-content: center;
 }
+
+.commit-set{
+  display: flex;
+  justify-content: center;
+  font-size: 1.1em;
+}
+
+.battle-choice {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}

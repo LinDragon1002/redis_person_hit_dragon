@@ -9,55 +9,101 @@
 @import 'warrior-stats.css';
 
 
-:root { 
-    --neon-cyan: #00ffff; 
-    --neon-pink: #ff00ff; 
+:root {
+    --neon-cyan: #00ffff;
+    --neon-pink: #ff00ff;
     --neon-yellow: #ffd700;
     --neon-magenta: #ff00ff;
-    --bg-dark: #0a0a1a; 
-    --dragon-color: #ff3366; 
-    --person-color: #00d9ff; 
+    --bg-dark: #0a0a1a;
+    --dragon-color: #ff3366;
+    --person-color: #00d9ff;
     --text-secondary: #888;
     --text-muted: #666;
     --font-tech: 'Orbitron', 'Segoe UI', sans-serif;
 }
-body { 
-    background-color: var(--bg-dark); 
-    color: white; 
-    font-family: 'Rajdhani', 'Segoe UI', sans-serif; 
-    overflow-x: hidden; 
-    margin: 0; 
+
+body {
+    background-color: var(--bg-dark);
+    color: white;
+    font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+    overflow-x: hidden;
+    margin: 0;
 }
 
 .modal-tech {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85); z-index: 1000;
-    display: none; justify-content: center; align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 1000;
+    display: none;
+    justify-content: center;
+    align-items: center;
     backdrop-filter: blur(5px);
 }
+
 .modal-content-tech {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border: 1px solid var(--neon-cyan);
     box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
-    padding: 30px; border-radius: 15px; width: 420px; text-align: center;
-    max-width: 90%;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
 }
 
-.mode-selector { display: flex; gap: 15px; margin: 20px 0; justify-content: center; }
+.mode-selector {
+    display: flex;
+    gap: 15px;
+    margin: 20px 0;
+    justify-content: center;
+}
+
 .mode-option {
-    flex: 1; padding: 15px; border: 2px solid #333; border-radius: 10px;
-    cursor: pointer; transition: 0.3s; opacity: 0.6;
+    flex: 1;
+    padding: 15px;
+    border: 2px solid #333;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+    opacity: 0.6;
 }
+
 .mode-option.active {
-    border-color: var(--neon-cyan); opacity: 1;
-    background: rgba(0, 255, 255, 0.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+    border-color: var(--neon-cyan);
+    opacity: 1;
+    background: rgba(0, 255, 255, 0.1);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
 }
-.mode-option i { font-size: 2em; margin-bottom: 10px; display: block; }
+
+.mode-option i {
+    font-size: 2em;
+    margin-bottom: 10px;
+    display: block;
+}
 
 .tech-btn {
-    background: transparent; border: 2px solid var(--neon-cyan); color: var(--neon-cyan);
-    padding: 12px 24px; font-size: 1.1em; cursor: pointer; transition: 0.3s;
-    border-radius: 8px; margin: 5px; font-family: var(--font-tech); font-weight: 600;
+    background: transparent;
+    border: 2px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    padding: 12px 24px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: 0.3s;
+    border-radius: 8px;
+    margin: 5px;
+    font-family: var(--font-tech);
+    font-weight: 600;
 }
-.tech-btn:hover { background: var(--neon-cyan); color: black; box-shadow: 0 0 20px var(--neon-cyan); }
-.tech-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.tech-btn:hover {
+    background: var(--neon-cyan);
+    color: black;
+    box-shadow: 0 0 20px var(--neon-cyan);
+}
+
+.tech-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

@@ -8,19 +8,18 @@ async function loadAllHistoryWithStats() {
         
         if (games.length === 0) {
             container.innerHTML = '<div class="loading-tech"><span>尚無任何戰鬥記錄</span></div>';
-            updateSummary(0, 0, 0, 0);
+            updateSummary(0, 0, 0);
             return;
         }
         
         // 計算統計
-        let dragonWins = 0, personWins = 0, draws = 0;
+        let dragonWins = 0, personWins = 0;
         games.forEach(game => {
             if (game.winner === '龍王') dragonWins++;
             else if (game.winner === '勇者') personWins++;
-            else draws++;
         });
         
-        updateSummary(games.length, dragonWins, personWins, draws);
+        updateSummary(games.length, dragonWins, personWins);
         
         // 渲染遊戲列表
         container.innerHTML = games.map(game => createGameItemHTML(game)).join('');
@@ -32,11 +31,10 @@ async function loadAllHistoryWithStats() {
 }
 
 // 更新統計摘要
-function updateSummary(total, dragon, person, draw) {
+function updateSummary(total, dragon, person) {
     document.getElementById('summaryTotal').textContent = total;
     document.getElementById('summaryDragon').textContent = dragon;
     document.getElementById('summaryPerson').textContent = person;
-    document.getElementById('summaryDraw').textContent = draw;
 }
 
 // 篩選按鈕
