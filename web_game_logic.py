@@ -64,16 +64,19 @@ class WebBattleGame:
         self.person.attack(self.dragon, choice=action_id, game_id=self.game_id, current_round=self.turn_count)
 
         # --- 計算行動結果並記錄事件 ---
+        # ★★★ 初始化暴擊標記（預設為 False）★★★
+        person_is_crit = False
+        
         # 檢查是否造成傷害
         dmg = dragon_hp_before - self.dragon.hp
         if dmg > 0:
             # characters.py 在暴擊時會把 status 設為 True
-            is_crit = self.person.status 
+            person_is_crit = self.person.status 
             turn_events.append({
                 'type': 'damage',
                 'target': 'dragon',
                 'value': dmg,
-                'is_crit': is_crit
+                'is_crit': person_is_crit
             })
             # 重置暴擊狀態標記，避免影響下次判斷
             self.person.status = False 
@@ -101,14 +104,17 @@ class WebBattleGame:
         self.dragon.attack(self.person, game_id=self.game_id, current_round=self.turn_count)
 
         # --- 計算行動結果並記錄事件 ---
+        # ★★★ 初始化暴擊標記（預設為 False）★★★
+        dragon_is_crit = False
+        
         dmg = person_hp_before - self.person.hp
         if dmg > 0:
-            is_crit = self.dragon.status
+            dragon_is_crit = self.dragon.status
             turn_events.append({
                 'type': 'damage',
                 'target': 'person',
                 'value': dmg,
-                'is_crit': is_crit
+                'is_crit': dragon_is_crit
             })
             self.dragon.status = False
         
@@ -132,8 +138,8 @@ class WebBattleGame:
         self.person.decrement_cooldowns()
         self.dragon.decrement_cooldowns()
 
-        # 勇者攻擊
-        if is_crit:
+        # ★★★ 追蹤連續暴擊（勇者或龍王任一方暴擊都計算）★★★
+        if person_is_crit or dragon_is_crit:
             self.current_consecutive_crits += 1
             self.max_consecutive_crits = max(
                 self.max_consecutive_crits, 
@@ -159,11 +165,12 @@ class WebBattleGame:
         self.winner = winner
         self.is_game_over = True
         
-        # 調試日誌：記錄遊戲結束時的血量
+        # 調試日誌：記錄遊戲結束時的血量和連續暴擊
         print(f"[遊戲結束] 獲勝者: {winner}")
         print(f"  龍王最終HP: {self.dragon.hp}/{self.dragon.initial_hp}")
         print(f"  勇者最終HP: {self.person.hp}/{self.person.initial_hp}")
         print(f"  總回合數: {self.turn_count}")
+        print(f"  最大連續暴擊: {self.max_consecutive_crits}")
         
         save_game_to_redis(self.game_id, self.dragon, self.person, winner, self.turn_count, self.player_name)
         return self.get_state(last_events)
@@ -188,4 +195,9 @@ class WebBattleGame:
         # ★★★ 如果有事件，就加入到狀態中回傳給前端 ★★★
         if events:
             state['turn_events'] = events
+        
+        # ★★★ 遊戲結束時，傳遞連續暴擊數據給前端（用於成就檢查）★★★
+        if self.is_game_over:
+            state['consecutive_crits'] = self.max_consecutive_crits
+            
         return state
