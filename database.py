@@ -3,8 +3,8 @@ import redis
 import json
 from datetime import datetime
 from config import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
-import redis.commands.search.reducers as reducers
-from redis.commands.search.aggregation import AggregateRequest
+# import redis.commands.search.reducers as reducers
+# from redis.commands.search.aggregation import AggregateRequest
 from redis.commands.search.field import NumericField, TagField
 from redis.commands.search.index_definition import IndexDefinition, IndexType
 
@@ -167,64 +167,80 @@ def get_default_character_config(character_id):
     return None
 
 def get_aggregated_character_stats():
-    """使用 Redis Stack 的 Aggregate 進行高效運算"""
-    if redis_client is None: return None
+    """
+    使用 FT.AGGREGATE 進行聚合查詢
+    """
+    if redis_client is None: 
+        return None
 
     try:
-        # 1. 建立聚合請求
-        # GROUPBY 空清單代表「全表加總」
-        req = AggregateRequest("*").group_by([], [
-            reducers.sum("d_dmg").alias("total_d_dmg"),
-            reducers.sum("d_heal").alias("total_d_heal"),
-            reducers.sum("d_crit").alias("total_d_crit"),
-            reducers.sum("p_dmg").alias("total_p_dmg"),
-            reducers.sum("p_heal").alias("total_p_heal"),
-            reducers.sum("p_crit").alias("total_p_crit"),
-            reducers.count().alias("game_count")
-        ]).apply(
-            expression="@total_d_dmg / @game_count", alias="avg_d_dmg"
-        ).apply(
-            expression="@total_d_heal / @game_count", alias="avg_d_heal"
-        ).apply(
-            expression="@total_p_dmg / @game_count", alias="avg_p_dmg"
-        ).apply(
-            expression="@total_p_heal / @game_count", alias="avg_p_heal"
+        dragon_result = redis_client.execute_command(
+            'FT.AGGREGATE', 'idx:games', '*',
+            'GROUPBY', '0',
+            'REDUCE', 'SUM', '1', '@d_dmg', 'AS', 'total_damage',
+            'REDUCE', 'SUM', '1', '@d_heal', 'AS', 'total_healing',
+            'REDUCE', 'SUM', '1', '@d_crit', 'AS', 'total_crits',
+            'REDUCE', 'COUNT', '0', 'AS', 'game_count'
         )
-
-        # 2. 執行查詢
-        res = redis_client.ft("idx:games").aggregate(req)
         
-        # 3. 處理結果
-        if not res.rows:
+        person_result = redis_client.execute_command(
+            'FT.AGGREGATE', 'idx:games', '*',
+            'GROUPBY', '0',
+            'REDUCE', 'SUM', '1', '@p_dmg', 'AS', 'total_damage',
+            'REDUCE', 'SUM', '1', '@p_heal', 'AS', 'total_healing',
+            'REDUCE', 'SUM', '1', '@p_crit', 'AS', 'total_crits',
+            'REDUCE', 'COUNT', '0', 'AS', 'game_count'
+        )
+        
+        # 解析結果
+        def parse_aggregate_result(result):
+            if not result or len(result) < 2:
+                return {'total_damage': 0, 'total_healing': 0, 'total_crits': 0, 'game_count': 0}
+            
+            row = result[1]
+            stats = {}
+            for i in range(0, len(row), 2):
+                key = row[i]
+                value = row[i + 1]
+                try:
+                    stats[key] = float(value) if '.' in str(value) else int(value)
+                except:
+                    stats[key] = value
+            return stats
+        
+        dragon_stats = parse_aggregate_result(dragon_result)
+        person_stats = parse_aggregate_result(person_result)
+        game_count = dragon_stats.get('game_count', 0)
+        
+        if game_count == 0:
             return {
                 'dragon': {'total_damage': 0, 'avg_damage': 0, 'total_healing': 0, 'avg_healing': 0, 'total_crits': 0},
                 'person': {'total_damage': 0, 'avg_damage': 0, 'total_healing': 0, 'avg_healing': 0, 'total_crits': 0},
                 'analyzed_games': 0
             }
-
-        row = res.rows[0]
         
-        # 4. 格式化回傳
         return {
             'dragon': {
-                'total_damage': int(float(row['total_d_dmg'])),
-                'total_healing': int(float(row['total_d_heal'])),
-                'total_crits': int(float(row['total_d_crit'])),
-                'avg_damage': round(float(row['avg_d_dmg']), 1),
-                'avg_healing': round(float(row['avg_d_heal']), 1)
+                'total_damage': int(dragon_stats.get('total_damage', 0)),
+                'total_healing': int(dragon_stats.get('total_healing', 0)),
+                'total_crits': int(dragon_stats.get('total_crits', 0)),
+                'avg_damage': round(dragon_stats.get('total_damage', 0) / game_count, 1),
+                'avg_healing': round(dragon_stats.get('total_healing', 0) / game_count, 1)
             },
             'person': {
-                'total_damage': int(float(row['total_p_dmg'])),
-                'total_healing': int(float(row['total_p_heal'])),
-                'total_crits': int(float(row['total_p_crit'])),
-                'avg_damage': round(float(row['avg_p_dmg']), 1),
-                'avg_healing': round(float(row['avg_p_heal']), 1)
+                'total_damage': int(person_stats.get('total_damage', 0)),
+                'total_healing': int(person_stats.get('total_healing', 0)),
+                'total_crits': int(person_stats.get('total_crits', 0)),
+                'avg_damage': round(person_stats.get('total_damage', 0) / game_count, 1),
+                'avg_healing': round(person_stats.get('total_healing', 0) / game_count, 1)
             },
-            'analyzed_games': int(row['game_count'])
+            'analyzed_games': game_count
         }
 
     except Exception as e:
         print(f"聚合查詢失敗: {e}")
+        import traceback
+        traceback.print_exc()
         return None
     
 def get_all_games_from_redis():
