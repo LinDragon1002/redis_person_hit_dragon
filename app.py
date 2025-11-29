@@ -3,8 +3,8 @@ eventlet.monkey_patch()
 
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO, emit
-from database import get_aggregated_character_stats
-from database import get_all_games_from_redis
+# 匯入 reconstruct_game_data 來處理 Hash 資料重組
+from database import get_aggregated_character_stats, get_all_games_from_redis, reconstruct_game_data, redis_client
 from web_game_logic import WebBattleGame
 import json
 import sys
@@ -16,7 +16,6 @@ import time
 # 匯入 GUI 模式遊戲執行器
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from main import run_gui_game
-from database import redis_client
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -41,6 +40,7 @@ def leaderboard_page():
 @app.route('/api/all_games')
 def get_all_games():
     try:
+        # database.py 裡的 get_all_games_from_redis 已經改成 hgetall 了，直接用
         games = get_all_games_from_redis()
         return jsonify(games)
     except Exception as e:
@@ -56,6 +56,7 @@ def get_stats():
                 'draws': 0, 'avg_rounds': 0, 'dragon_win_rate': 0, 'person_win_rate': 0
             })
         
+        # 這些是簡單的 Key-Value 或 Hash，保持原樣即可
         total_games = int(redis_client.get('stats:total_games') or 0)
         total_rounds_sum = int(redis_client.hget('stats:total_rounds', 'sum') or 0)
         
@@ -89,10 +90,16 @@ def get_recent_games():
         game_ids = redis_client.lrange('game:list', 0, 19)
         games = []
         
+        # [修正] 使用 Pipeline + hgetall 讀取 Hash
+        pipe = redis_client.pipeline()
         for game_id in game_ids:
-            game_data_str = redis_client.get(f'game:{game_id}')
-            if game_data_str:
-                game_data = json.loads(game_data_str)
+            pipe.hgetall(f'game:{game_id}')
+        results = pipe.execute()
+        
+        for flat_data in results:
+            if flat_data:
+                # [修正] 使用 reconstruct_game_data 重組資料
+                game_data = reconstruct_game_data(flat_data)
                 games.append(game_data)
         
         return jsonify(games)
@@ -107,9 +114,11 @@ def get_game_detail(game_id):
         if not redis_client:
             return jsonify({'error': 'Redis 未連接'}), 500
         
-        game_data_str = redis_client.get(f'game:{game_id}')
-        if game_data_str:
-            game_data = json.loads(game_data_str)
+        # [修正] 改用 hgetall
+        flat_data = redis_client.hgetall(f'game:{game_id}')
+        if flat_data:
+            # [修正] 重組資料
+            game_data = reconstruct_game_data(flat_data)
             return jsonify(game_data)
         else:
             return jsonify({'error': '遊戲不存在'}), 404
@@ -148,7 +157,6 @@ def run_game():
         
         print(f"[API] 開始手動戰鬥 - 玩家: {player_name}, 難度: {difficulty}, 顯示: {display_mode}")
         
-        # 使用背景任務執行遊戲，傳入 socketio 以便廣播結果
         socketio.start_background_task(
             target=run_gui_game,
             mode=mode,
@@ -183,7 +191,6 @@ def run_game_auto():
         
         print(f"[API] 開始自動戰鬥 - 玩家: {player_name}, 難度: {difficulty}")
         
-        # 自動模式直接執行並返回結果
         socketio.start_background_task(
             target=run_gui_game,
             mode='auto', 
@@ -193,7 +200,6 @@ def run_game_auto():
             socketio=socketio
         )
         
-        # 立即回傳成功，不等待遊戲結束
         return jsonify({
             'success': True,
             'message': 'Auto game started in background'
@@ -218,27 +224,24 @@ def get_leaderboard():
         if not top_damage:
             return jsonify([])
 
-        # 2. 使用 Pipeline 一次抓取所有對應的遊戲詳細資料
+        # [修正] 使用 Pipeline + hgetall
         pipe = redis_client.pipeline()
         for game_id, _ in top_damage:
-            pipe.get(f'game:{game_id}')
+            pipe.hgetall(f'game:{game_id}')
         games_data = pipe.execute()
         
         leaderboard = []
         for i, (game_id, damage) in enumerate(top_damage):
             player_name = '未知玩家'
             
-            # 解析 JSON 取得名字
+            # [修正] games_data[i] 是 dict，直接取值
             if games_data[i]:
-                try:
-                    game_info = json.loads(games_data[i])
-                    player_name = game_info.get('player_name', '未知玩家')
-                except:
-                    pass
+                flat_game = games_data[i]
+                player_name = flat_game.get('player_name', '未知玩家')
             
             leaderboard.append({
-                'game_id': game_id,      # 保留 ID 以便前端若需要連結回放
-                'player_name': player_name, # ★★★ 新增：玩家名稱
+                'game_id': game_id,
+                'player_name': player_name,
                 'damage': int(damage)
             })
             
@@ -258,27 +261,24 @@ def get_rounds_leaderboard():
         if not top_rounds:
             return jsonify([])
 
-        # 2. 使用 Pipeline 抓取詳細資料
+        # [修正] 使用 Pipeline + hgetall
         pipe = redis_client.pipeline()
         for game_id, _ in top_rounds:
-            pipe.get(f'game:{game_id}')
+            pipe.hgetall(f'game:{game_id}')
         games_data = pipe.execute()
         
-        # 3. 組裝結果
         leaderboard = []
         for i, (game_id, rounds) in enumerate(top_rounds):
             player_name = '未知玩家'
             
+            # [修正] games_data[i] 是 dict
             if games_data[i]:
-                try:
-                    game_info = json.loads(games_data[i])
-                    player_name = game_info.get('player_name', '未知玩家')
-                except:
-                    pass
+                flat_game = games_data[i]
+                player_name = flat_game.get('player_name', '未知玩家')
 
             leaderboard.append({
                 'game_id': game_id,
-                'player_name': player_name, # ★★★ 新增：玩家名稱
+                'player_name': player_name,
                 'rounds': int(rounds)
             })
             
@@ -296,15 +296,19 @@ def get_player_leaderboard():
         game_ids = redis_client.lrange('game:list', 0, -1)
         player_stats = {}
         
+        # [修正] 使用 Pipeline + hgetall
         pipe = redis_client.pipeline()
         for gid in game_ids:
-            pipe.get(f'game:{gid}')
-        games_json = pipe.execute()
+            pipe.hgetall(f'game:{gid}')
+        games_results = pipe.execute()
         
-        for game_str in games_json:
-            if not game_str:
+        for flat_data in games_results:
+            if not flat_data:
                 continue
-            data = json.loads(game_str)
+            
+            # [修正] 重組資料以便取得巢狀結構 (雖然這裡可以直接讀 Hash key，但統一用 reconstruct 比較安全)
+            data = reconstruct_game_data(flat_data)
+            
             player_name = data.get('player_name', '匿名玩家')
             winner = data.get('winner', '')
             
@@ -312,6 +316,7 @@ def get_player_leaderboard():
                 player_stats[player_name] = {'wins': 0, 'total': 0, 'damage': 0}
             
             player_stats[player_name]['total'] += 1
+            # 注意：reconstruct 後是巢狀 dict
             player_stats[player_name]['damage'] += data.get('person_stats', {}).get('total_damage_dealt', 0)
             
             if winner == '勇者':
@@ -402,7 +407,7 @@ def redis_subscriber():
                     game_update = {
                         'game_id': notification_data.get('game_id'),
                         'timestamp': notification_data.get('timestamp'),
-                        'total_rounds': notification_data.get('rounds'),
+                        'total_rounds': notification_data.get('rounds') or notification_data.get('total_rounds'),
                         'winner': notification_data.get('winner'),
                         'player_name': notification_data.get('player_name', '匿名玩家'),
                         'dragon_stats': notification_data.get('dragon_stats', {}),
@@ -491,7 +496,7 @@ def handle_web_auto(data):
 
 
 if __name__ == '__main__':
-    # ★★★ 啟用 Redis 訂閱者 ★★★
+    # 啟用 Redis 訂閱者
     start_redis_subscriber()
     
     # 啟動 SocketIO 伺服器

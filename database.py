@@ -3,6 +3,10 @@ import redis
 import json
 from datetime import datetime
 from config import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
+import redis.commands.search.reducers as reducers
+from redis.commands.search.aggregation import AggregateRequest
+from redis.commands.search.field import NumericField, TagField
+from redis.commands.search.index_definition import IndexDefinition, IndexType
 
 # --- Redis 連接設定 ---
 try:
@@ -19,6 +23,49 @@ except Exception as e:
     print(f"Redis 連接失敗: {e}")
     redis_client = None
 
+def init_search_index():
+    if not redis_client: return
+    index_name = "idx:games"
+    try:
+        redis_client.ft(index_name).info()
+    except:
+        # Schema 定義：因為資料已經攤平，欄位名稱直接對應 Hash Key
+        schema = (
+            NumericField("d_damage", as_name="d_dmg"),
+            NumericField("d_heal", as_name="d_heal"),
+            NumericField("d_crit", as_name="d_crit"),
+            NumericField("p_damage", as_name="p_dmg"),
+            NumericField("p_heal", as_name="p_heal"),
+            NumericField("p_crit", as_name="p_crit"),
+            TagField("winner", as_name="winner")
+        )
+        # [重要] IndexType 改為 HASH
+        definition = IndexDefinition(prefix=["game:"], index_type=IndexType.HASH)
+        redis_client.ft(index_name).create_index(schema, definition=definition)
+
+def reconstruct_game_data(flat_data):
+    if not flat_data: return None
+    # 處理可能遺失的 game_id (從 key 拿通常較準，但這裡假設 content 也有)
+    return {
+        'game_id': int(flat_data.get('game_id', 0)),
+        'timestamp': flat_data.get('timestamp', ''),
+        'total_rounds': int(flat_data.get('total_rounds', 0)),
+        'winner': flat_data.get('winner', '未定'),
+        'player_name': flat_data.get('player_name', '匿名玩家'),
+        'dragon_stats': {
+            'total_damage_dealt': int(flat_data.get('d_damage', 0)),
+            'total_healing': int(flat_data.get('d_heal', 0)),
+            'critical_hits': int(flat_data.get('d_crit', 0)),
+            'final_hp': int(flat_data.get('d_hp', 0))
+        },
+        'person_stats': {
+            'total_damage_dealt': int(flat_data.get('p_damage', 0)),
+            'total_healing': int(flat_data.get('p_heal', 0)),
+            'critical_hits': int(flat_data.get('p_crit', 0)),
+            'final_hp': int(flat_data.get('p_hp', 0))
+        }
+    }
+
 def save_game_to_redis(game_id, dragon, person, winner, total_rounds, player_name='匿名玩家'):
     """
     使用 Pipeline 和 Watch 確保交易完整性。
@@ -33,101 +80,60 @@ def save_game_to_redis(game_id, dragon, person, winner, total_rounds, player_nam
     game_key = f'game:{game_id}'
     
     try:
-        # 準備數據
-        game_data = {
+        flat_data = {
             'game_id': game_id,
             'timestamp': datetime.now().isoformat(),
             'total_rounds': total_rounds,
             'winner': winner,
             'player_name': player_name,
-            'dragon_stats': dragon.get_stats(),
-            'person_stats': person.get_stats()
+            'd_damage': dragon.total_damage_dealt,
+            'd_heal': dragon.total_healing,
+            'd_crit': dragon.critical_hits,
+            'd_hp': max(0, dragon.hp),
+            'p_damage': person.total_damage_dealt,
+            'p_heal': person.total_healing,
+            'p_crit': person.critical_hits,
+            'p_hp': max(0, person.hp)
         }
-        json_data = json.dumps(game_data, ensure_ascii=False)
-
-        # --- 交易開始 (Redis Transaction Pattern) ---
         with redis_client.pipeline() as pipe:
             while True:
                 try:
-                    # 1. WATCH: 監控遊戲 Key
-                    # 如果在執行 execute 前，這個 key 被其他客戶端改變了，交易會觸發 WatchError
                     pipe.watch(game_key)
-                    
-                    # 2. 檢查邏輯 (Read before Write)
-                    # 如果遊戲已經存在，就不應該重複增加統計數據
                     if pipe.exists(game_key):
-                        print(f"警告: 遊戲 ID {game_id} 已存在，跳過儲存以避免重複統計。")
-                        pipe.unwatch() # 取消監控
-                        return None # 或者返回已存在的數據
-
-                    # 3. 開啟交易 (MULTI)
+                        pipe.unwatch()
+                        return None
                     pipe.multi()
-                    
-                    # 4. 放入指令隊列
-                    pipe.setex(game_key, 86400 * 30, json_data)
+                    pipe.hset(game_key, mapping=flat_data) # Hash 寫入
+                    pipe.expire(game_key, 86400 * 30)
                     pipe.lpush('game:list', game_id)
-                    pipe.ltrim('game:list', 0, 99)
-                    
-                    # 統計數據更新 (這些是最怕重複計算的)
                     pipe.hincrby('stats:wins', winner, 1)
                     pipe.hincrby('stats:total_rounds', 'sum', total_rounds)
                     pipe.incr('stats:total_games')
-                    
-                    # 排行榜與集合
                     pipe.zadd('leaderboard:longest_rounds', {str(game_id): total_rounds})
                     pipe.zadd('leaderboard:max_damage:person', {str(game_id): person.total_damage_dealt})
-                    
-                    if winner == '龍王':
-                        pipe.sadd('games:winner:dragon', game_id)
-                    elif winner == '勇者':
-                        pipe.sadd('games:winner:person', game_id)
-                        
-                    # Pub/Sub 通知 - 發布完整遊戲數據
                     notification = {
                         'event': 'game_completed',
                         'game_id': game_id,
-                        'timestamp': datetime.now().isoformat(), # 新增時間戳
+                        'timestamp': flat_data['timestamp'],
                         'winner': winner,
-                        'rounds': total_rounds,
-                        'player_name': player_name,              # 新增玩家名稱
-                        'dragon_stats': dragon.get_stats(),      # [關鍵] 新增龍王數據
-                        'person_stats': person.get_stats()       # [關鍵] 新增勇者數據
+                        'player_name': player_name,
+                        'dragon_stats': dragon.get_stats(),
+                        'person_stats': person.get_stats()
                     }
                     pipe.publish('channel:game_notifications', json.dumps(notification))
-                    
-                    # 5. 執行交易 (EXEC)
                     pipe.execute()
-                    
-                    print(f"成功原子性儲存遊戲 #{game_id} 到 Redis！")
-                    return game_data
-
+                    return flat_data
                 except redis.WatchError:
-                    # 如果在 watch 期間 key 被改動，會進入這裡
-                    # 在這個場景下，代表可能剛好有另一個 thread 存了一樣的 ID
-                    print(f"交易衝突：遊戲 #{game_id} 在儲存過程中被修改。重試或放棄。")
-                    # 這裡可以選擇 continue (重試) 或者 return (放棄)
-                    # 對於「防止重複儲存」來說，放棄是正確的選擇
-                    return None 
-                except Exception as e:
-                    # 其他錯誤
-                    print(f"儲存交易發生未知錯誤: {e}")
                     return None
-                    
     except Exception as e:
-        print(f"準備數據時發生錯誤: {e}")
+        print(f"Error: {e}")
         return None
 
 def load_character_from_redis(character_id):
-    if not redis_client:
-        return None
+    if not redis_client: return None
     try:
-        char_data = redis_client.hgetall(f'character:{character_id}')
-        if char_data:
-            print(f"成功從 Redis 加載角色: {char_data.get('name')}")
-        return char_data
-    except Exception as e:
-        print(f"從 Redis 加載角色失敗: {e}")
-        return None
+        return redis_client.hgetall(f'character:{character_id}')
+    except: return None
 
 def get_default_character_config(character_id):
     if character_id == 'dragon':
@@ -161,100 +167,87 @@ def get_default_character_config(character_id):
     return None
 
 def get_aggregated_character_stats():
-    """
-    聚合查詢：計算角色的總傷害、總治療、總暴擊以及場均數據。
-    使用 Pipeline 優化網路傳輸。
-    """
-    if redis_client is None:
-        return None
+    """使用 Redis Stack 的 Aggregate 進行高效運算"""
+    if redis_client is None: return None
 
     try:
-        # 1. 獲取所有遊戲 ID
-        game_ids = redis_client.lrange('game:list', 0, -1)
-        total_games = len(game_ids)
+        # 1. 建立聚合請求
+        # GROUPBY 空清單代表「全表加總」
+        req = AggregateRequest("*").group_by([], [
+            reducers.sum("d_dmg").alias("total_d_dmg"),
+            reducers.sum("d_heal").alias("total_d_heal"),
+            reducers.sum("d_crit").alias("total_d_crit"),
+            reducers.sum("p_dmg").alias("total_p_dmg"),
+            reducers.sum("p_heal").alias("total_p_heal"),
+            reducers.sum("p_crit").alias("total_p_crit"),
+            reducers.count().alias("game_count")
+        ]).apply(
+            expression="@total_d_dmg / @game_count", alias="avg_d_dmg"
+        ).apply(
+            expression="@total_d_heal / @game_count", alias="avg_d_heal"
+        ).apply(
+            expression="@total_p_dmg / @game_count", alias="avg_p_dmg"
+        ).apply(
+            expression="@total_p_heal / @game_count", alias="avg_p_heal"
+        )
+
+        # 2. 執行查詢
+        res = redis_client.ft("idx:games").aggregate(req)
         
-        if total_games == 0:
+        # 3. 處理結果
+        if not res.rows:
             return {
-                'dragon': {'total_damage': 0, 'total_healing': 0, 'total_crits': 0, 'avg_damage': 0, 'avg_healing': 0},
-                'person': {'total_damage': 0, 'total_healing': 0, 'total_crits': 0, 'avg_damage': 0, 'avg_healing': 0}
+                'dragon': {'total_damage': 0, 'avg_damage': 0, 'total_healing': 0, 'avg_healing': 0, 'total_crits': 0},
+                'person': {'total_damage': 0, 'avg_damage': 0, 'total_healing': 0, 'avg_healing': 0, 'total_crits': 0},
+                'analyzed_games': 0
             }
 
-        # 2. Pipeline 批次讀取 (Aggregation Load)
-        pipe = redis_client.pipeline()
-        for gid in game_ids:
-            pipe.get(f'game:{gid}')
-        games_json = pipe.execute()
-
-        # 3. 初始化累加器
-        stats = {
-            'dragon': {'damage': 0, 'healing': 0, 'crits': 0},
-            'person': {'damage': 0, 'healing': 0, 'crits': 0}
-        }
-
-        # 4. 聚合運算 (Aggregation Calculation)
-        valid_count = 0
-        for game_str in games_json:
-            if not game_str: continue
-            
-            data = json.loads(game_str)
-            d_stats = data.get('dragon_stats', {})
-            p_stats = data.get('person_stats', {})
-            
-            stats['dragon']['damage'] += d_stats.get('total_damage_dealt', 0)
-            stats['dragon']['healing'] += d_stats.get('total_healing', 0)
-            stats['dragon']['crits'] += d_stats.get('critical_hits', 0)
-            
-            stats['person']['damage'] += p_stats.get('total_damage_dealt', 0)
-            stats['person']['healing'] += p_stats.get('total_healing', 0)
-            stats['person']['crits'] += p_stats.get('critical_hits', 0)
-            valid_count += 1
-
-        # 5. 計算平均值並格式化輸出
-        def calculate_final(role_key):
-            d = stats[role_key]
-            return {
-                'total_damage': d['damage'],
-                'total_healing': d['healing'],
-                'total_crits': d['crits'],
-                # 新增聚合指標：場均數據
-                'avg_damage': round(d['damage'] / valid_count, 1) if valid_count else 0,
-                'avg_healing': round(d['healing'] / valid_count, 1) if valid_count else 0
-            }
-
+        row = res.rows[0]
+        
+        # 4. 格式化回傳
         return {
-            'dragon': calculate_final('dragon'),
-            'person': calculate_final('person'),
-            'analyzed_games': valid_count
+            'dragon': {
+                'total_damage': int(float(row['total_d_dmg'])),
+                'total_healing': int(float(row['total_d_heal'])),
+                'total_crits': int(float(row['total_d_crit'])),
+                'avg_damage': round(float(row['avg_d_dmg']), 1),
+                'avg_healing': round(float(row['avg_d_heal']), 1)
+            },
+            'person': {
+                'total_damage': int(float(row['total_p_dmg'])),
+                'total_healing': int(float(row['total_p_heal'])),
+                'total_crits': int(float(row['total_p_crit'])),
+                'avg_damage': round(float(row['avg_p_dmg']), 1),
+                'avg_healing': round(float(row['avg_p_heal']), 1)
+            },
+            'analyzed_games': int(row['game_count'])
         }
 
     except Exception as e:
-        print(f"角色統計聚合失敗: {e}")
+        print(f"聚合查詢失敗: {e}")
         return None
     
 def get_all_games_from_redis():
-    """獲取所有遊戲記錄"""
-    if not redis_client:
-        return []
+    if not redis_client: return []
     try:
-        # lrange 0 -1 代表取出清單中所有元素
         game_ids = redis_client.lrange('game:list', 0, -1)
         games = []
         
-        # 使用 Pipeline 加速讀取
         pipe = redis_client.pipeline()
         for game_id in game_ids:
-            pipe.get(f'game:{game_id}')
+            pipe.hgetall(f'game:{game_id}') # 改用 hgetall
         results = pipe.execute()
         
-        for game_data_str in results:
-            if game_data_str:
-                games.append(json.loads(game_data_str))
+        for flat_data in results:
+            if flat_data:
+                # 使用重組函式
+                games.append(reconstruct_game_data(flat_data))
                 
         return games
     except Exception as e:
-        print(f"讀取所有歷史紀錄失敗: {e}")
+        print(f"讀取失敗: {e}")
         return []
-    
+        
 
 def log_battle_event(game_id, turn, actor, action, value, details):
     """
