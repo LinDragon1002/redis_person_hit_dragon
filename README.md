@@ -48,12 +48,14 @@ python app.py
 ```bash
 pip install -r requirements.txt
 ```
-需要自行建立 `.env` 檔案
+需要自行建立 `.env` 檔案(有範例可以看example.env)
 
 ```# .env 範例
-host=127.0.0.1
-port=6379
-password=...
+host=''
+port=''
+decode_responses=True
+username='default'
+password=''
 ```
 
 ---
