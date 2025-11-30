@@ -174,7 +174,7 @@ socket.on('web_update', function(state) {
         // ★★★ 檢查單場戰鬥成就 ★★★
         if (typeof checkSingleGameAchievements === 'function') {
             checkSingleGameAchievements({
-                rounds: state.round,
+                rounds: state.round || state.total_rounds || 0,
                 winner: state.winner,
                 dragon_stats: state.dragon,
                 person_stats: state.person,

@@ -477,8 +477,11 @@ function checkHealingAchievements(totalHealing) {
 
 // ★★★ 新增：檢查單場戰鬥成就 ★★★
 function checkSingleGameAchievements(gameData) {
+    const rounds = parseInt(gameData.rounds) || 
+                   parseInt(gameData.total_rounds) || 
+                   0;
     // 成就 7: 極限生存 - 單場戰鬥超過 30 回合
-    if (gameData.rounds >= 30) {
+    if (rounds >= 30) {
         unlockAchievement('achievement7');
     }
     

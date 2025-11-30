@@ -91,10 +91,10 @@ class WebBattleGame:
                     'value': heal
                 })
 
-        # 檢查勇者是否獲勝
+        # ★ 檢查勇者是否獲勝（回合數 = 當前回合）
         if self.dragon.hp <= 0:
             print(f"[回合{self.turn_count}] 龍王HP歸零 ({self.dragon.hp})，勇者獲勝！")
-            return self.end_game('勇者', turn_events)
+            return self.end_game('勇者', turn_events, final_round=self.turn_count)
 
         # === 2. 龍王行動 (AI) ===
         # --- 記錄攻擊前的狀態 ---
@@ -128,10 +128,10 @@ class WebBattleGame:
                     'value': heal
                 })
 
-        # 檢查龍王是否獲勝
+        # ★ 檢查龍王是否獲勝（回合數 = 當前回合）
         if self.person.hp <= 0:
             print(f"[回合{self.turn_count}] 勇者HP歸零 ({self.person.hp})，龍王獲勝！")
-            return self.end_game('龍王', turn_events)
+            return self.end_game('龍王', turn_events, final_round=self.turn_count)
 
         # === 3. 回合結算 ===
         self.turn_count += 1
@@ -160,26 +160,49 @@ class WebBattleGame:
         if 3 in available: return 3
         return random.choice(available)
 
-    def end_game(self, winner, last_events=None):
-        """遊戲結束處理"""
+    def end_game(self, winner, last_events=None, final_round=None):
+        """
+        遊戲結束處理
+        
+        參數:
+            winner: 獲勝者名稱
+            last_events: 最後一回合的事件列表
+            final_round: 最終回合數（明確傳入，避免混淆）
+        """
         self.winner = winner
         self.is_game_over = True
+        
+        # ★ 使用明確傳入的回合數，如果沒傳就用 self.turn_count
+        actual_round = final_round if final_round is not None else self.turn_count
         
         # 調試日誌：記錄遊戲結束時的血量和連續暴擊
         print(f"[遊戲結束] 獲勝者: {winner}")
         print(f"  龍王最終HP: {self.dragon.hp}/{self.dragon.initial_hp}")
         print(f"  勇者最終HP: {self.person.hp}/{self.person.initial_hp}")
-        print(f"  總回合數: {self.turn_count}")
+        print(f"  總回合數: {actual_round}")
         print(f"  最大連續暴擊: {self.max_consecutive_crits}")
         
-        save_game_to_redis(self.game_id, self.dragon, self.person, winner, self.turn_count, self.player_name)
-        return self.get_state(last_events)
+        # ★ 保存到 Redis 時使用明確的回合數
+        save_game_to_redis(self.game_id, self.dragon, self.person, winner, actual_round, self.player_name)
+        
+        # ★ 返回狀態時也使用明確的回合數
+        return self.get_state(last_events, final_round=actual_round)
 
-    def get_state(self, events=None):
-        """打包當前遊戲狀態，可選傳入事件列表"""
+    def get_state(self, events=None, final_round=None):
+        """
+        打包當前遊戲狀態，可選傳入事件列表
+        
+        參數:
+            events: 本回合發生的事件列表
+            final_round: 最終回合數（遊戲結束時使用）
+        """
+        # ★ 如果傳入 final_round，使用它；否則使用 self.turn_count
+        current_round = final_round if final_round is not None else self.turn_count
+        
         state = {
             'game_id': self.game_id,
-            'round': self.turn_count,
+            'round': current_round,  # ★ 使用確定的回合數
+            'total_rounds': current_round,
             'winner': self.winner,
             'game_over': self.is_game_over,
             'dragon': {
@@ -192,6 +215,7 @@ class WebBattleGame:
                 'cooldowns': self.person.cooldowns
             }
         }
+        
         # ★★★ 如果有事件，就加入到狀態中回傳給前端 ★★★
         if events:
             state['turn_events'] = events

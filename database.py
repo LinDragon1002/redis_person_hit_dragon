@@ -103,7 +103,7 @@ def save_game_to_redis(game_id, dragon, person, winner, total_rounds, player_nam
                         pipe.unwatch()
                         return None
                     pipe.multi()
-                    pipe.hset(game_key, mapping=flat_data) # Hash 寫入
+                    pipe.hset(game_key, mapping=flat_data)
                     pipe.expire(game_key, 86400 * 30)
                     pipe.lpush('game:list', game_id)
                     pipe.hincrby('stats:wins', winner, 1)
@@ -116,6 +116,7 @@ def save_game_to_redis(game_id, dragon, person, winner, total_rounds, player_nam
                         'game_id': game_id,
                         'timestamp': flat_data['timestamp'],
                         'winner': winner,
+                        'total_rounds': total_rounds,
                         'player_name': player_name,
                         'dragon_stats': dragon.get_stats(),
                         'person_stats': person.get_stats()
@@ -251,12 +252,11 @@ def get_all_games_from_redis():
         
         pipe = redis_client.pipeline()
         for game_id in game_ids:
-            pipe.hgetall(f'game:{game_id}') # 改用 hgetall
+            pipe.hgetall(f'game:{game_id}')
         results = pipe.execute()
         
         for flat_data in results:
             if flat_data:
-                # 使用重組函式
                 games.append(reconstruct_game_data(flat_data))
                 
         return games
