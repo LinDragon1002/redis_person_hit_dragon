@@ -1,12 +1,12 @@
 # database.py
 import redis
 import json
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from config import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
-# import redis.commands.search.reducers as reducers
-# from redis.commands.search.aggregation import AggregateRequest
 from redis.commands.search.field import NumericField, TagField
 from redis.commands.search.index_definition import IndexDefinition, IndexType
+
+TAIPEI_TZ = timezone(timedelta(hours=8))
 
 # --- Redis 連接設定 ---
 try:
@@ -82,7 +82,7 @@ def save_game_to_redis(game_id, dragon, person, winner, total_rounds, player_nam
     try:
         flat_data = {
             'game_id': game_id,
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': datetime.now(TAIPEI_TZ).isoformat(),
             'total_rounds': total_rounds,
             'winner': winner,
             'player_name': player_name,
