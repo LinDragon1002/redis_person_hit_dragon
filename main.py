@@ -127,7 +127,7 @@ def run_gui_game(mode='manual', player_name='匿名玩家', difficulty='normal',
     pygame.display.set_caption(f"勇者對戰龍王 - {mode_text} [{diff_text}]")
 
     # --- 初始化角色 ---
-    print(f"\n正在加載角色數據... (難度: {diff_text}, 模式: {mode_text})")
+    # print(f"\n正在加載角色數據... (難度: {diff_text}, 模式: {mode_text})")
     
     d_conf = load_character_from_redis('dragon') or get_default_character_config('dragon')
     p_conf = load_character_from_redis('person') or get_default_character_config('person')
@@ -160,7 +160,7 @@ def run_gui_game(mode='manual', player_name='匿名玩家', difficulty='normal',
     if redis_client:
         try:
             current_game_id = redis_client.incr('game:id:counter')
-            print(f"遊戲開始！ID: {current_game_id} | 難度: {diff_text} | 模式: {mode_text}")
+            # print(f"遊戲開始！ID: {current_game_id} | 難度: {diff_text} | 模式: {mode_text}")
         except: 
             pass
 
@@ -313,7 +313,7 @@ def run_gui_game(mode='manual', player_name='匿名玩家', difficulty='normal',
                 socketio.emit('game_over', {'winner': winner, 'game_id': current_game_id})
             
             game_saved = True
-            print(f"遊戲結束！勝利者: {winner}, 回合數: {current_rounds}")
+            # print(f"遊戲結束！勝利者: {winner}, 回合數: {current_rounds}")
 
         # === 渲染畫面 ===
         if display_mode == 'pygame':
@@ -415,10 +415,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     result = run_gui_game(mode=args.mode, player_name=args.player, difficulty=args.difficulty)
-    if result:
-        print(f"\n=== 遊戲結果 ===")
-        print(f"勝利者: {result['winner']}")
-        print(f"回合數: {result['total_rounds']}")
-        print(f"難度: {result['difficulty']}")
+    # if result:
+    #     print(f"\n=== 遊戲結果 ===")
+    #     print(f"勝利者: {result['winner']}")
+    #     print(f"回合數: {result['total_rounds']}")
+    #     print(f"難度: {result['difficulty']}")
     
     sys.exit()

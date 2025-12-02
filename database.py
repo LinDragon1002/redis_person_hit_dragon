@@ -1,5 +1,6 @@
 # database.py
 import redis
+from redis.connection import ConnectionPool
 import json
 from datetime import datetime, timezone, timedelta
 from config import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
@@ -8,43 +9,91 @@ from redis.commands.search.index_definition import IndexDefinition, IndexType
 
 TAIPEI_TZ = timezone(timedelta(hours=8))
 
-# --- Redis 連接設定 ---
-try:
-    redis_client = redis.Redis(
-        host=REDIS_HOST,
-        port=REDIS_PORT,
-        decode_responses=True,
-        username="default",
-        password=REDIS_PASSWORD,
-    )
-    redis_client.ping()
-    print("成功連接到 Redis！啟用進階功能")
-except Exception as e:
-    print(f"Redis 連接失敗: {e}")
-    redis_client = None
+# --- Redis 連接池設定 (單例模式) ---
+class RedisConnection:
+    _pool = None
+    _client = None
+    
+    @classmethod
+    def get_pool(cls):
+        """取得或建立連線池 (只會建立一次)"""
+        if cls._pool is None:
+            try:
+                cls._pool = ConnectionPool(
+                    host=REDIS_HOST,
+                    port=REDIS_PORT,
+                    username="default",
+                    password=REDIS_PASSWORD,
+                    decode_responses=True,
+                    max_connections=30,  # 限制最大連線數
+                    socket_keepalive=True,
+                    socket_connect_timeout=5,
+                    socket_timeout=5,
+                    retry_on_timeout=True,
+                    health_check_interval=30,  # 每30秒檢查連線健康
+                )
+                print("✓ Redis 連線池已建立")
+            except Exception as e:
+                print(f"✗ Redis 連線池建立失敗: {e}")
+                cls._pool = None
+        return cls._pool
+    
+    @classmethod
+    def get_client(cls):
+        """取得 Redis 客戶端 (重複使用連線池)"""
+        if cls._client is None:
+            pool = cls.get_pool()
+            if pool is not None:
+                try:
+                    cls._client = redis.Redis(connection_pool=pool)
+                    cls._client.ping()
+                    print("✓ 成功連接到 Redis！啟用進階功能")
+                except Exception as e:
+                    print(f"✗ Redis 連接失敗: {e}")
+                    cls._client = None
+        return cls._client
+    
+    @classmethod
+    def close(cls):
+        """關閉連線池 (程式結束時呼叫)"""
+        if cls._pool is not None:
+            cls._pool.disconnect()
+            cls._pool = None
+            cls._client = None
+            print("Redis 連線池已關閉")
+
+# 使用統一的客戶端
+redis_client = RedisConnection.get_client()
 
 def init_search_index():
-    if not redis_client: return
+    if not redis_client: 
+        return
+    
     index_name = "idx:games"
     try:
         redis_client.ft(index_name).info()
     except:
-        # Schema 定義：因為資料已經攤平，欄位名稱直接對應 Hash Key
-        schema = (
-            NumericField("d_damage", as_name="d_dmg"),
-            NumericField("d_heal", as_name="d_heal"),
-            NumericField("d_crit", as_name="d_crit"),
-            NumericField("p_damage", as_name="p_dmg"),
-            NumericField("p_heal", as_name="p_heal"),
-            NumericField("p_crit", as_name="p_crit"),
-            TagField("winner", as_name="winner")
-        )
-        # [重要] IndexType 改為 HASH
-        definition = IndexDefinition(prefix=["game:"], index_type=IndexType.HASH)
-        redis_client.ft(index_name).create_index(schema, definition=definition)
+        try:
+            # Schema 定義：因為資料已經攤平，欄位名稱直接對應 Hash Key
+            schema = (
+                NumericField("d_damage", as_name="d_dmg"),
+                NumericField("d_heal", as_name="d_heal"),
+                NumericField("d_crit", as_name="d_crit"),
+                NumericField("p_damage", as_name="p_dmg"),
+                NumericField("p_heal", as_name="p_heal"),
+                NumericField("p_crit", as_name="p_crit"),
+                TagField("winner", as_name="winner")
+            )
+            # [重要] IndexType 改為 HASH
+            definition = IndexDefinition(prefix=["game:"], index_type=IndexType.HASH)
+            redis_client.ft(index_name).create_index(schema, definition=definition)
+        except Exception as e:
+            print(f"建立索引失敗: {e}")
 
 def reconstruct_game_data(flat_data):
-    if not flat_data: return None
+    if not flat_data: 
+        return None
+    
     # 處理可能遺失的 game_id (從 key 拿通常較準，但這裡假設 content 也有)
     return {
         'game_id': int(flat_data.get('game_id', 0)),
@@ -95,13 +144,19 @@ def save_game_to_redis(game_id, dragon, person, winner, total_rounds, player_nam
             'p_crit': person.critical_hits,
             'p_hp': max(0, person.hp)
         }
+        
         with redis_client.pipeline() as pipe:
-            while True:
+            max_retries = 3
+            retry_count = 0
+            
+            while retry_count < max_retries:
                 try:
                     pipe.watch(game_key)
+                    
                     if pipe.exists(game_key):
                         pipe.unwatch()
                         return None
+                    
                     pipe.multi()
                     pipe.hset(game_key, mapping=flat_data)
                     pipe.expire(game_key, 86400 * 30)
@@ -111,6 +166,7 @@ def save_game_to_redis(game_id, dragon, person, winner, total_rounds, player_nam
                     pipe.incr('stats:total_games')
                     pipe.zadd('leaderboard:longest_rounds', {str(game_id): total_rounds})
                     pipe.zadd('leaderboard:max_damage:person', {str(game_id): person.total_damage_dealt})
+                    
                     notification = {
                         'event': 'game_completed',
                         'game_id': game_id,
@@ -123,18 +179,29 @@ def save_game_to_redis(game_id, dragon, person, winner, total_rounds, player_nam
                     }
                     pipe.publish('channel:game_notifications', json.dumps(notification))
                     pipe.execute()
+                    
                     return flat_data
+                    
                 except redis.WatchError:
-                    return None
+                    retry_count += 1
+                    if retry_count >= max_retries:
+                        return None
+                    continue
+                    
     except Exception as e:
-        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def load_character_from_redis(character_id):
-    if not redis_client: return None
+    if not redis_client: 
+        return None
+    
     try:
-        return redis_client.hgetall(f'character:{character_id}')
-    except: return None
+        data = redis_client.hgetall(f'character:{character_id}')
+        return data if data else None
+    except Exception as e:
+        return None
 
 def get_default_character_config(character_id):
     if character_id == 'dragon':
@@ -245,25 +312,38 @@ def get_aggregated_character_stats():
         return None
     
 def get_all_games_from_redis():
-    if not redis_client: return []
+    if not redis_client: 
+        return []
+    
     try:
         game_ids = redis_client.lrange('game:list', 0, -1)
+        
+        if not game_ids:
+            return []
+        
         games = []
         
+        # 使用 pipeline 批次取得資料,減少網路往返
         pipe = redis_client.pipeline()
         for game_id in game_ids:
             pipe.hgetall(f'game:{game_id}')
+        
         results = pipe.execute()
         
         for flat_data in results:
             if flat_data:
-                games.append(reconstruct_game_data(flat_data))
-                
-        return games
-    except Exception as e:
-        print(f"讀取失敗: {e}")
-        return []
+                game_data = reconstruct_game_data(flat_data)
+                if game_data:
+                    games.append(game_data)
         
+        print(f"成功載入 {len(games)} 筆遊戲記錄")
+        return games
+        
+    except Exception as e:
+        print(f"讀取遊戲列表失敗: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
 
 def log_battle_event(game_id, turn, actor, action, value, details):
     """
@@ -274,14 +354,26 @@ def log_battle_event(game_id, turn, actor, action, value, details):
 
     try:
         event_data = {
-            'turn': turn,
-            'actor': actor,
-            'action': action,
-            'value': str(value),  # 轉為字串確保 Redis 相容性
-            'details': details,
-            'timestamp': str(datetime.now())
+            'turn': str(turn),
+            'actor': str(actor),
+            'action': str(action),
+            'value': str(value),
+            'details': str(details),
+            'timestamp': datetime.now(TAIPEI_TZ).isoformat()
         }
+        
         # 寫入 Stream，key 為 game:{id}:stream
-        redis_client.xadd(f'game:{game_id}:stream', event_data)
+        stream_key = f'game:{game_id}:stream'
+        redis_client.xadd(stream_key, event_data, maxlen=1000)  # 限制 stream 長度
+        
     except Exception as e:
-        print(f"[Database] Stream 寫入錯誤: {e}")
+        print(f"Stream 寫入錯誤: {e}")
+
+# 程式結束時的清理函數
+def cleanup():
+    """在程式結束時呼叫此函數"""
+    RedisConnection.close()
+
+# 可選：註冊 atexit 確保程式結束時關閉連線
+import atexit
+atexit.register(cleanup)
